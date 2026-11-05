@@ -1,6 +1,6 @@
-# Kai — Modellvorschlag für die g4dn.xlarge (T4, 16 GB)
+# Kai — Modellvorschlag für `kai-gpu` (g4dn.xlarge, T4 16 GB)
 
-Stand: 2026-11-04 · Status: Vorschlag für den ersten Durchstich (S1-02); Modelltests folgen später
+Stand: 2026-11-05 · Status: Vorschlag für den ersten Durchstich (S1-02); Modelltests folgen später · Bezug: [01 Architektur](01_architektur.md), die Modelle laufen auf `kai-gpu` hinter llama-swap, Nutzer und Harnesses sehen sie über LiteLLM auf `kai-entry`
 
 ## Randbedingungen der GPU
 
@@ -21,7 +21,7 @@ Stand: 2026-11-04 · Status: Vorschlag für den ersten Durchstich (S1-02); Model
 
 **Risiko, das Phase 3 prüft:** gpt-oss wurde in BF16 trainiert; auf FP16-Karten (T4) sind Überlaufprobleme berichtet worden (Unsloth-Hinweis). llama.cpp hat dafür Gegenmaßnahmen, aber der erste Test auf der Maschine ist: zehn deutsche Alltagsfragen plus zwei Werkzeugaufrufe, Antworten plausibel? Wenn nicht → Alternative A.
 
-### llama-swap-Eintrag (Entwurf, Phase 2 pinnt die Flags)
+### llama-swap-Eintrag (Entwurf, Phase 2 pinnt die Flags; Datei `kai/compose/gpu/llama-swap.yaml`)
 
 ```yaml
 models:
@@ -32,7 +32,7 @@ models:
       --ctx-size 32768 --parallel 4 -fa on --jinja
       --chat-template-kwargs '{"reasoning_effort":"medium"}'
       -ngl 999 --host 0.0.0.0
-    ttl: 0            # Stufe 1: nicht automatisch entladen, es gibt nur ein Modell
+    ttl: 0            # Durchstich: nicht automatisch entladen, es gibt nur ein Modell
 ```
 
 ## Alternativen für die Modelltests (S1-02, später)
@@ -44,10 +44,12 @@ models:
 | C | **Gemma-3-12B-it** Q4_K_M | ~8 GB | ja | Natürlichere Alltagssprache, Bildverständnis; Werkzeugaufrufe schwächer |
 | D | **Kleines Zweitmodell** (Qwen3-4B / Gemma-3-4B, ~3 GB) | 3 GB | ja, **neben** dem Hauptmodell | Für schnelle Aufgaben und Tests, zeigt den Modellwechsel über llama-swap |
 
+**Testmodell für `kai-gpu-pre` (ohne GPU):** `Qwen3-0.6B` in Q8_0 (~0,6 GB, `unsloth/Qwen3-0.6B-GGUF`) läuft auf der CPU in Sekunden an und prüft die Kette Open WebUI → LiteLLM → llama-swap → llama-server in Phase 2. Es sagt nichts über Qualität oder Geschwindigkeit und steht nur in der Modellliste von `kai-gpu-pre`.
+
 Vorgehen bei den Tests (Vorschlag für S1-01/S1-10): gleiche 10–20 Fragen aus dem Alltag der vier Nutzer, je Modell Antwortqualität (Schulnote), Zeit bis zur ersten Antwort, Zeit bis zur fertigen Antwort, einmal mit vier parallelen Anfragen. Ergebnisse als Tabelle in ClickUp.
 
-## Was das für die Maschine bedeutet
+## Was das für `kai-gpu` bedeutet
 
-- Ein Modell ≈ 10–15 GB auf der Platte; drei Modelle für Tests ≈ 40 GB → bestätigt die 150 GB in [02](02_anforderungen-infrastruktur.md) 2.1.
+- Ein Modell ≈ 10–15 GB auf der Platte; drei Modelle für Tests ≈ 40 GB → bestätigt die 150 GB des Volumes `kai-models` in [02](02_anforderungen-infrastruktur.md) 2.2.
 - Beim Modellwechsel über llama-swap lädt die T4 das neue Modell von EBS: bei gp3-Standarddurchsatz (125 MB/s) dauern 12 GB ~100 s. Wenn das stört: gp3-Durchsatz auf 250–500 MB/s hochsetzen (kleine Mehrkosten) oder `ttl` so setzen, dass das Hauptmodell geladen bleibt.
-- Mehr VRAM (g5.xlarge, A10G 24 GB, ≈ 1,2 $/h in Frankfurt) würde Qwen3.6-35B-A3B in MXFP4 **mit** Kontext erlauben. Das ist die Frage für Stufe 2 („größere GPU-VM nur bei Bedarf“), nicht für den Durchstich.
+- Mehr VRAM (g5.xlarge, A10G 24 GB, ≈ 1,2 $/h in Frankfurt) würde Qwen3.6-35B-A3B in MXFP4 **mit** Kontext erlauben. Das ist dann eine zweite GPU-VM neben `kai-gpu` oder ihr Ersatz nach den Regeln in [01 §3](01_architektur.md); Oberfläche, Konten und LiteLLM-Endpunkt bleiben gleich. Nicht für den Durchstich.
