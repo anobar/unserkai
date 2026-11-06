@@ -1,6 +1,6 @@
 # Kai — Architektur und Design (zwei Maschinen)
 
-Stand: 2026-11-05 · Status: Entwurf zur Abstimmung · Autor: Axel (mit Claude Code)
+Stand: 2026-11-06 · Status: Entwurf zur Abstimmung · Autor: Axel (mit Claude Code)
 
 Dieses Dokument beschreibt, **was** auf den Kai-Maschinen läuft, **warum** es so gebaut wird und **wie** die Teile zusammenhängen. Es ist die Grundlage für die Skripte (Phase 2) und die Umsetzung (Phase 3). Für Nicht-Techniker gibt es die Bilder in [bilder/](bilder/) und die Kurzfassung in der [README](../README.md).
 
@@ -13,7 +13,7 @@ Verwandt: [02 Anforderungen an die Infrastruktur](02_anforderungen-infrastruktur
 - **Ziel des ersten Durchstichs:** Ein Chat für vier Personen (Uwe, Axel, Nic, Martin) mit einem lokal laufenden Sprachmodell auf einer gemieteten GPU-Maschine in AWS, nutzbar vom PC und Telefon. Dazu Websuche als erstes Werkzeug (Brave) und ein Endpunkt, an dem später Harnesses wie OpenCode, OpenClaw oder OpenWork andocken.
 - **Nicht-Ziele des Durchstichs:** Messenger-Anbindung, automatisches Hoch- und Runterfahren der GPU-Maschine, Hochverfügbarkeit, Einbindung privater Hardware (lezki), externe KI-Dienste mit Pseudonymisierung. Für all das ist der Platz vorgesehen (§5), gebaut wird es später.
 - **Vorbild:** Axels Heim-Setup (`lezki` = GPU-Rechenknoten mit llama.cpp hinter llama-swap, `mcps` = Open WebUI als Frontend). Übertragen auf AWS: zwei Maschinen mit genau dieser Rollenteilung, alles in **Docker-Containern**, Verteilung über **Ansible** (Konvention dieses Repos).
-- **Ausgangslage:** Uwe hat am 05.11. die kleine Einstiegs-Instanz `webui1` angelegt (Befund in [kai-entry_specs.md](kai-entry_specs.md)). Sie ist gesetzt: Amazon Linux 2023, SSM-Zugang, privates Subnetz. Das Konzept richtet sich danach, nicht umgekehrt; Rollen, Stacks und die Test-VMs im Heimnetz werden auf die Systeme der AWS-Maschinen ausgelegt. Kai beginnt deshalb direkt mit der Trennung von Oberfläche und Rechenknoten, die vorher als zweite Stufe geplant war.
+- **Ausgangslage:** Uwe hat am 05.11. die kleine Einstiegs-Instanz `webui1` angelegt (Befund in [kai-entry_specs.md](kai-entry_specs.md): SSM-Zugang, privates Subnetz, damals Amazon Linux 2023). Am 06.11. haben Uwe und Axel festgelegt, dass alle Kai-Maschinen Debian 13 tragen wie die Maschinen in Axels Heimnetz: `webui1` wird mit dem offiziellen Debian-AMI neu aufgesetzt, `kai-gpu` bekommt dasselbe AMI, die Test-VMs im Heimnetz das Debian-Cloud-Image desselben Builds. Rollen und Stacks entstehen damit nach dem Muster des Heim-Setups; was Uwe in AWS bereitstellt, ist der Maßstab. Kai beginnt direkt mit der Trennung von Oberfläche und Rechenknoten, die vorher als zweite Stufe geplant war.
 
 ## 2. Zielbild: `kai-entry` und `kai-gpu`
 
@@ -47,7 +47,7 @@ später daneben, alle als weitere Einträge in LiteLLM: GPU-VM B (größer) · l
 | | `kai-entry` | `kai-gpu` |
 |---|---|---|
 | AWS-Name | `webui1`, von Uwe angelegt; `kai-entry` ist der Name im Konzept und im Inventory | neu anzulegen, nach demselben Muster |
-| System | Amazon Linux 2023 (gesetzt) | Amazon Linux 2023 mit NVIDIA-Treiber, Docker und Container Toolkit (Vorschlag, Uwe entscheidet) |
+| System | Debian 13, offizielles Debian-AMI (Uwe setzt `webui1` damit neu auf) | dasselbe AMI; NVIDIA-Treiber, Docker und Container Toolkit installiert Ansible |
 | Betrieb | läuft durch, günstig | nur an, wenn gebraucht; später automatisch |
 | Hält | Konten, Chat-Verlauf, Dokumente, Werkzeuge, Keys, Modellliste | Modelldateien, Grafikkarte |
 | Ersetzbar durch | größere Instanz derselben Art | GPU-VM mit mehr VRAM, zweite GPU-VM daneben |
@@ -75,7 +75,7 @@ Begründungen:
 - **kai-entry:** alle Container hängen in einem Compose-Netz `kai`. Host-Ports: `open-webui` auf `kai_webui_bind:3000` für die Nutzer, `litellm` auf `kai_litellm_bind:4000` für Harnesses. Beide Adressen sind die VPN-seitige Adresse der Maschine oder `127.0.0.1`, je nach Zugangsweg. `brave-mcp` und `litellm-db` sind nur aus dem Docker-Netz erreichbar.
 - **kai-gpu:** `llama-swap` veröffentlicht 8080 auf der VPC-Adresse, weil `kai-entry` es erreichen muss. llama-swap hat keine Authentifizierung, deshalb lässt die Security Group 8080 nur aus der Security Group von `kai-entry` zu, nie aus dem VPN und nie öffentlich. Die Verwaltungsendpunkte von llama-swap (`/running`, `/unload`, `/logs`, Web-UI) bleiben damit intern; für Admin-Blicke: SSM-Portweiterleitung.
 - **Adressierung:** `kai-entry` erreicht `kai-gpu` ausschließlich über den DNS-Namen in der Ansible-Variable `kai_gpu_endpoint` (Vorschlag `http://gpu.kai.internal:8080`, private Route-53-Zone von Uwe). Keine IP-Adresse im Repo, in `litellm.yaml` oder in einer Compose-Datei. Siehe §3.
-- **Ausgehend:** Image-Registries, Hugging Face (nur `kai-gpu`), api.search.brave.com (nur `kai-entry`), AL2023-Paketspiegel, GitHub (Compose-Plugin), NVIDIA-Repo (nur `kai-gpu`). Liste in [02 §3](02_anforderungen-infrastruktur.md). Die heutige Instanz `webui1` hat **keinen** Egress, das ist eine Voraussetzung an die Infrastruktur.
+- **Ausgehend:** Image-Registries, Hugging Face (nur `kai-gpu`), api.search.brave.com (nur `kai-entry`), Debian-Spiegel, Dockers apt-Repo, NVIDIAs CUDA-Repo (Treiber und Toolkit, nur `kai-gpu`), Anthropic (Claude Code, nur `kai-entry`). Liste in [02 §3](02_anforderungen-infrastruktur.md). Die heutige Instanz `webui1` hat **keinen** Egress, das ist eine Voraussetzung an die Infrastruktur.
 
 ### Daten und Persistenz
 
@@ -88,7 +88,7 @@ Begründungen:
 | kai-gpu | Modelldateien (GGUF) | `/opt/kai/models` (Volume `kai-models`) | pro Modell 5–15 GB | **nicht** nötig: wiederbeschaffbar; Snapshot optional, um einen Maschinenwechsel zu beschleunigen |
 | kai-gpu | Compose, `llama-swap.yaml` | `/opt/kai/` (von Ansible verwaltet) | nein | im Git |
 
-Die Root-Platten beider Maschinen enthalten nichts, was fehlen dürfte: Betriebssystem, Treiber, Docker-Images. Alles davon kommt aus der AMI oder wird von Ansible neu erzeugt.
+Die Root-Platten beider Maschinen enthalten nichts, was fehlen dürfte: Betriebssystem, Treiber, Docker-Images. Alles davon kommt aus dem Image oder wird von Ansible installiert.
 
 Ein Sprachmodell **speichert nichts**. Was gespeichert wird (Chats, Uploads), liegt auf dem Volume von `kai-entry` auf einer EBS-Platte in Frankfurt; Zugriff darauf hat, wer Admin in Open WebUI ist oder Root auf der Maschine. Das ist die Antwort auf die Datenschutz-Frage aus dem Meeting vom 02.11.; sie ist bei S1-04 festzuhalten. Fragen an externe Dienste (OpenAI, Anthropic) gibt es erst, wenn das Team Regeln dafür beschlossen hat (§5).
 
@@ -110,7 +110,7 @@ Ein Sprachmodell **speichert nichts**. Was gespeichert wird (Chats, Uploads), li
 | kai-gpu (g4dn.xlarge) | GPU-Speicher | 16 GB (T4) | Modell ~11 GB + KV-Cache für Kontext; siehe [03](03_modellvorschlag.md) |
 | kai-gpu | RAM | 16 GB | llama-swap/llama-server ~1–2 GB (mmap des Modells zählt als Page-Cache), Docker, OS |
 | kai-gpu | vCPU | 4 | Prompt-Vorverarbeitung läuft auf der GPU; CPU ist unkritisch |
-| kai-gpu | Platte | Root der AMI (≥ 30 GB) + Volume `kai-models` 150 GB | CUDA-Image ~5 GB auf Root; 2–3 Modelle ~30 GB plus Luft für Tests auf dem Volume |
+| kai-gpu | Platte | Root 30 GB + Volume `kai-models` 150 GB | Treiber mit Kernel-Headern und DKMS-Bau ~1 GB, CUDA-Image ~5 GB auf Root; 2–3 Modelle ~30 GB plus Luft für Tests auf dem Volume |
 
 ## 3. Austauschbarkeit: die Maschine ist Wegwerfware
 
@@ -121,19 +121,19 @@ Beide Maschinen sollen sich jederzeit ersetzen lassen, `kai-gpu` durch eine mit 
 | Zustand nur auf eigenen EBS-Volumes | `kai-entry`: Volume `kai-data` als `/opt/kai`. `kai-gpu`: Volume `kai-models` als `/opt/kai/models`. Ansible mountet per Dateisystem-Label (`LABEL=kai-data`, `LABEL=kai-models`), nie per Gerätenamen, weil NVMe-Namen mit dem Instanztyp wechseln. Volume und Instanz liegen in derselben Availability Zone. EBS-Snapshot als Rückfall, falls auch das Volume ersetzt wird |
 | Keine Adressen im Stack | `kai-gpu` wird über den privaten DNS-Namen aus `kai_gpu_endpoint` erreicht. Security Groups verweisen aufeinander per Gruppen-ID, nicht per IP. Eine neue GPU-VM bekommt denselben Namen und dieselbe Gruppe, `kai-entry` merkt den Wechsel nicht |
 | Inventar nach Rolle, nicht nach Maschine | Gruppen `kai_entry` und `kai_gpu`; alle Variablen in `group_vars`. In `host_vars` steht nur, was die konkrete Maschine ausmacht: Instanz-ID für den SSM-ProxyCommand, VRAM, Modellliste, Kontextgröße. Später kann das Plugin `amazon.aws.aws_ec2` die Maschine am Tag `kai:role` finden, dann ändert ein Wechsel null Zeilen |
-| Rollen laufen von Null auf frischer AMI | ohne Handarbeit, zweimal hintereinander, der zweite Lauf meldet `changed=0`. Genau das prüft die Abnahmeregel für `kai-entry-pre` und `kai-gpu-pre` |
-| Docker macht den Stack maschinenunabhängig | Images per Digest gepinnt; GPU per `deploy.resources.reservations.devices` mit `count: all`, also gleich für eine T4 oder zwei A10G. Das Betriebssystem ist für die Container egal; die Ansible-Rollen folgen dem System der jeweiligen AWS-Maschine (`kai-entry`: Amazon Linux 2023, `kai-gpu`: nach Uwes AMI-Wahl). Die einzige Bindung an die Maschine ist der NVIDIA-Treiber aus der AMI: die CUDA-Version des llama-swap-Images muss zum Treiber passen (`cuda13` braucht Treiber ≥ 580). AMI-Familie und Treiberstand stehen in [02 §1](02_anforderungen-infrastruktur.md) |
+| Rollen laufen von Null auf frischem Image | ohne Handarbeit, zweimal hintereinander, der zweite Lauf meldet `changed=0`. Genau das prüft die Abnahmeregel für `kai-entry-pre` und `kai-gpu-pre` |
+| Docker macht den Stack maschinenunabhängig | Images per Digest gepinnt; GPU per `deploy.resources.reservations.devices` mit `count: all`, also gleich für eine T4 oder zwei A10G. Das Betriebssystem ist für die Container egal; beide Maschinen tragen dasselbe Debian-13-AMI, also haben die Ansible-Rollen einen einzigen Paketweg (`apt`), wie im Heimnetz. Die einzige Bindung an die Maschine ist der NVIDIA-Treiber, den die Rolle `kai_gpu` aus NVIDIAs CUDA-Repo für Debian 13 installiert: die CUDA-Version des llama-swap-Images muss zum Treiberzweig passen (`cuda13` braucht Treiber ≥ 580), deshalb ist der Zweig gepinnt ([02 §1.4](02_anforderungen-infrastruktur.md)) |
 
 Aufwand für einen Wechsel von `kai-gpu`, sobald die Rollen aus Phase 2 stehen:
 
 | Schritt | Wer | Dauer |
 |---|---|---|
 | Terraform: Instanztyp oder AMI ändern, Volume `kai-models` anhängen, DNS-Eintrag | Uwe | 10 bis 15 min |
-| Instanz-ID in `host_vars` eintragen, `make deploy LIMIT=kai-gpu` | Axel | 5 bis 10 min Laufzeit, davon der Großteil Image-Pull |
+| Instanz-ID in `host_vars` eintragen, `make deploy LIMIT=kai-gpu` | Axel | 10 bis 15 min Laufzeit, davon der Großteil Treiberbau (DKMS), ein Neustart und Image-Pull |
 | Erster Chat, Modell lädt, Antwortzeit prüfen | Axel | 5 min |
 | Nur wenn das Volume neu ist: Modelle laden | Axel | 3 bis 5 min pro Modell |
 
-Unter 30 Minuten, überwiegend Wartezeit. Das Risiko sitzt in der AMI: ein anderer Treiberstand kann das CUDA-Image unbrauchbar machen. Für `kai-entry` gilt dasselbe Muster, dazu kommt `.env` aus der KeePass, falls das Volume neu ist, und der Zugangsweg der Nutzer (VPN-Adresse oder DNS).
+Rund 30 Minuten, überwiegend Wartezeit. Das Risiko sitzt im Treiber: ein neuer Kernel oder Treiberzweig kann den DKMS-Bau oder das CUDA-Image brechen; deshalb ist der Zweig gepinnt, der Kernel folgt dem AMI, und `kai-gpu-pre` baut den Treiber vorab gegen denselben Kernel (Flavour `cloud-amd64`). Für `kai-entry` gilt dasselbe Muster, dazu kommt `.env` aus der KeePass, falls das Volume neu ist, und der Zugangsweg der Nutzer (VPN-Adresse oder DNS).
 
 ## 4. Betrieb
 
@@ -142,7 +142,7 @@ Unter 30 Minuten, überwiegend Wartezeit. Das Risiko sitzt in der AMI: ein ander
 - **Updates:** Images sind auf Versionen gepinnt; ein Update ist eine Änderung im Git + `make deploy`. Keine `latest`-Tags.
 - **Snapshots:** `kai-data` vor der Erstinstallation und an Meilensteinen (S1-11). Eine Wiederherstellung ist „Volume aus Snapshot + `make deploy`“.
 - **Logs:** `docker compose logs` je Maschine; llama-swap zeigt Modellwechsel und Lade-Dauer, LiteLLM den Verbrauch pro Key. Keine zentrale Log-Sammlung im Durchstich.
-- **Administration über Claude Code:** Node.js (aus dem AL2023-Repo) und `claude` werden nativ auf `kai-entry` installiert (nicht im Container), Login mit Axels Abo. Steuerung aus VSCode: Remote-SSH über SSM-ProxyCommand (`aws ssm start-session --document-name AWS-StartSSHSession`), darin die Claude-Code-Extension. `kai-gpu` wird nur über Ansible und SSM-Shell verwaltet. Voraussetzungen stehen in [02 §6](02_anforderungen-infrastruktur.md).
+- **Administration über Claude Code:** Claude Code (Paket `claude-code` aus Anthropics apt-Repo, wie im Heimnetz) wird nativ auf `kai-entry` installiert (nicht im Container), Login mit Axels Abo. Steuerung aus VSCode: Remote-SSH über SSM-ProxyCommand (`aws ssm start-session --document-name AWS-StartSSHSession`), darin die Claude-Code-Extension. `kai-gpu` wird nur über Ansible und SSM-Shell verwaltet. Voraussetzungen stehen in [02 §6](02_anforderungen-infrastruktur.md).
 
 ## 5. Ausblick: was der Endpunkt später aufnimmt
 
@@ -167,4 +167,4 @@ Jede Erweiterung ist ein weiterer Eintrag in `litellm.yaml` oder ein weiterer Ho
 | E7 | Zwei Ansible-Rollen `kai_entry` und `kai_gpu`, zwei Compose-Stacks | eine Rolle mit Schalter: vermischt zwei Maschinen mit verschiedenen Abhängigkeiten (GPU-Runtime, Postgres) |
 | E8 | Zwei Maschinen von Anfang an | eine GPU-Maschine für alles: kurzfristig billiger, aber zweiter Umzug, und die Einstiegs-Instanz existiert bereits |
 | E9 | LiteLLM auf `kai-entry` als Endpunkt und Verteiler | llama-swap dort: ist ein Prozess-Manager ohne GPU-Aufgabe; nur Open WebUI mit mehreren Verbindungen: reicht für den Durchstich, aber keine Keys für Harnesses und Modelle an zwei Stellen |
-| E10 | Amazon Linux 2023 für `kai-entry`, so wie Uwe `webui1` angelegt hat: die Rollen sprechen `dnf`, Docker kommt aus dem AL2023-Repo, das Compose-Plugin gepinnt von GitHub; `kai-gpu` folgt Uwes AMI-Wahl (Vorschlag: AL2023-Variante der AWS Deep Learning Base GPU AMI) | Ubuntu-AMI für `kai-entry`: hieße, Uwes Instanz umzubauen und die Rollen an einer AMI auszurichten, die nicht die Vorgabe ist |
+| E10 | Alle Maschinen auf Debian 13 (offizielles AMI, Uwe und Axel 06.11.): die Rollen sprechen `apt` wie im Heim-Setup, Docker CE aus Dockers Repo, auf `kai-gpu` Treiber (Open-Kernel-Modul per DKMS, Zweig gepinnt) und Container Toolkit aus NVIDIAs CUDA-Repo für Debian 13 | Amazon Linux 2023 (das bisherige `webui1`): ein Paketweg (`dnf`), den das Heim-Setup nicht kennt; GPU-AMI mit vorinstalliertem Treiber (Deep Learning Base): zweites Image mit eigenem Kernel- und Docker-Stand, zweiter Rollenpfad |

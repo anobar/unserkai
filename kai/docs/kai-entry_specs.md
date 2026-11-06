@@ -4,6 +4,8 @@ Erhoben am 2026-11-05 über SSM-Sitzung und EC2-API mit der Rolle `ssm-session-a
 [01 Architektur](01_architektur.md), [02 Anforderungen](02_anforderungen-infrastruktur.md) und den Plan ab Phase 2.
 Uwe: „die kleine Maschine für das Webui, sicher noch zu klein, größer machen ist kein Problem“.
 
+**Hinweis vom 06.11.:** Uwe und Axel haben festgelegt, dass alle Kai-Maschinen Debian 13 tragen; `webui1` wird mit dem offiziellen Debian-AMI neu aufgesetzt ([02 §1.2](02_anforderungen-infrastruktur.md)). Gültig bleiben die Befunde zu Instanz, Netz, Egress, IAM und user-data (§1, §3, §5 Punkte 2–5); §2 und §4 beschreiben den Stand auf Amazon Linux 2023 vom 05.11.
+
 ## 1. Instanz (EC2-API)
 
 | | |
@@ -57,19 +59,20 @@ Overlay-Dateisystem für Docker ist im Kernel nicht als Modul geladen (nur `xfs`
 
 ## 5. Folgerungen für das Konzept
 
-1. **Amazon Linux 2023 ist gesetzt.** `webui1` wird `kai-entry`; Rollen und Compose-Stack richten sich nach diesem
-   System (`dnf`, Docker aus dem AL2023-Repo, Entscheidung E10 in [01](01_architektur.md)), und `kai-entry-pre` bildet genau
-   dieses Release nach (Plan 2.0).
+1. **Debian 13 statt Amazon Linux 2023** (Uwe und Axel, 06.11.): `webui1` wird mit dem offiziellen Debian-AMI neu
+   aufgesetzt und bleibt `kai-entry`, `kai-gpu` bekommt dasselbe AMI; Rollen und Compose-Stack folgen dem Heim-Setup
+   (`apt`, Entscheidung E10 in [01](01_architektur.md)), und `kai-entry-pre` und `kai-gpu-pre` tragen das
+   Debian-Cloud-Image desselben Builds (Plan 2.0).
 2. **Egress klären.** Ohne ausgehendes Internet gibt es weder `apt`/`dnf`-Updates noch `docker pull`, Modell-Download
    oder die Brave-API. Es braucht ein NAT-Gateway oder VPC-Endpunkte (S3, ECR) plus eine Allowlist, siehe 02 §3.
    SSM selbst funktioniert, also sind die SSM-Endpunkte bereits erreichbar.
 3. **Ansible-Bootstrap.** Ohne SSH-Schlüssel auf der Maschine und ohne Recht auf `AWS-StartSSHSession` in der
    Session-Rolle geht Plan 2.10 (SSH über SSM-ProxyCommand) nicht; Rolle erweitern und Schlüssel per user-data oder
-   erstem SSM-Login hinterlegen. Bootstrap-Benutzer ist `ec2-user`.
+   erstem SSM-Login hinterlegen. Bootstrap-Benutzer auf dem Debian-AMI ist `admin`; den SSM-Agent bringt erst die user-data (02 §6.1).
 4. **Rolle `ssm-session-access-axel`** erlaubt heute: `ec2:DescribeInstances`, `Start`/`StopInstances`,
    `ssm:DescribeInstanceInformation`, `ssm:StartSession` nur mit dem Standard-Shell-Dokument. Verwehrt:
    `ssm:SendCommand`, `AWS-StartNonInteractiveCommand`, `ec2:DescribeVolumes`, `ec2:DescribeImages`.
 5. **Größe.** 913 MB RAM und 20 GB Platte reichen nicht einmal für Open WebUI plus Image-Cache; die Zielgröße steht in
    [02 §1](02_anforderungen-infrastruktur.md) und [03 Modellvorschlag](03_modellvorschlag.md).
-6. SELinux Permissive und `ip_forward=0` sind auf Amazon Linux Standard; Docker setzt `ip_forward` selbst, SELinux
-   bleibt Permissive.
+6. SELinux (auf Amazon Linux Permissive) entfällt mit Debian, dort ist AppArmor Standard; Docker setzt `ip_forward`
+   selbst.

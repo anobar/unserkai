@@ -1,20 +1,20 @@
 # Kai — Anforderungen an die Infrastruktur (für Uwe)
 
-Stand: 2026-11-05 · Status: zur Abstimmung · Bezug: [01 Architektur](01_architektur.md), [Bestandsaufnahme `webui1`](kai-entry_specs.md), Sprint-Aufgaben S1-05, S1-08, S1-11
+Stand: 2026-11-06 · Status: zur Abstimmung · Bezug: [01 Architektur](01_architektur.md), [Bestandsaufnahme `webui1`](kai-entry_specs.md), Sprint-Aufgaben S1-05, S1-08, S1-11
 
-Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ blockiert die Installation, „Soll“ den sauberen Betrieb, „Kann“ ist Komfort. `webui1` ist von Uwe gesetzt; die Punkte zu `kai-entry` beschreiben, was dazu noch fehlt, nicht einen Umbau.
+Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ blockiert die Installation, „Soll“ den sauberen Betrieb, „Kann“ ist Komfort. `webui1` ist von Uwe angelegt und wird auf Debian 13 neu aufgesetzt (§1.2); die Punkte zu `kai-entry` beschreiben, was die Instanz dabei braucht.
 
 ## 1. Instanzen
 
 | | Anforderung | Stufe |
 |---|---|---|
 | 1.1 | **`kai-entry`** ist `webui1`, wie von Uwe angelegt (Region `eu-central-1`, Zone `eu-central-1a`, x86_64). Gewünschte Größe `t3.medium` (2 vCPU, 4 GB RAM): die heutigen 913 MB reichen nicht für Open WebUI, LiteLLM und Postgres; Uwe hat die Vergrößerung angeboten | Muss |
-| 1.2 | **System `kai-entry`:** Amazon Linux 2023, so wie `webui1` läuft (Release 2023.12 vom 02.11.2026, [Bestandsaufnahme §2](kai-entry_specs.md)). Gesetzt; die Rollen werden darauf ausgelegt (`dnf`, Docker aus dem AL2023-Repo, Entscheidung E10 in [01 §6](01_architektur.md)). Bei einem Release-Wechsel bitte Bescheid, damit `kai-entry-pre` nachzieht | gesetzt |
+| 1.2 | **System, beide Maschinen:** Debian 13 (trixie), amd64, das offizielle AMI des Debian-Projekts (Konto `136693071363`, Name `debian-13-amd64-<Build>`), Kernel-Flavour `cloud-amd64`, cloud-init (abgestimmt Uwe und Axel, 06.11.). `webui1` wird damit neu aufgesetzt; die Rollen sprechen `apt` wie im Heimnetz (Entscheidung E10 in [01 §6](01_architektur.md)). Bitte den Namen des AMI nennen und bei einem Wechsel Bescheid geben, damit `kai-entry-pre` und `kai-gpu-pre` das Cloud-Image desselben Builds bekommen | gesetzt |
 | 1.3 | **`kai-gpu`:** `g4dn.xlarge` (1× T4 16 GB, 4 vCPU, 16 GB RAM), dieselbe Zone wie das Volume `kai-models` | Muss |
-| 1.4 | **AMI `kai-gpu`:** Vorschlag „Deep Learning Base OSS Nvidia Driver GPU AMI (Amazon Linux 2023)“ von AWS: Treiber, Docker und NVIDIA Container Toolkit vorinstalliert, gleiche Systemfamilie wie `kai-entry`. Zu prüfen: die gewählte Ausgabe nennt `g4dn` als unterstützt (frühe Ausgaben taten das nicht) und der Treiberstand ist ≥ 580, damit das `cuda13`-Image von llama-swap läuft. Die Rollen `common`/`docker` ersetzen das vorhandene Docker nicht (Plan 2.9). AMI-Name, System, Docker-, Toolkit- und Treiberversion bitte melden (Plan 2.0.2), damit `kai-gpu-pre` die AMI nachbildet. Uwe entscheidet; eine Ubuntu-GPU-AMI wäre eine zweite Rollenvariante | Muss |
-| 1.5 | Standard-Benutzer `ec2-user` mit sudo auf beiden Maschinen (AL2023-Standard, auf `webui1` vorhanden), erreichbar für Ansible (siehe §6) | Muss |
+| 1.4 | **Treiber `kai-gpu`:** keiner im AMI; die Rolle `kai_gpu` installiert ihn wie auf Axels GPU-Rechner aus NVIDIAs CUDA-Repo für Debian 13 (`cuda-keyring`, Header `linux-headers-cloud-amd64` zum laufenden Kernel, `nvidia-driver-cuda` mit dem Open-Kernel-Modul `nvidia-kernel-open-dkms`, `nvidia-container-toolkit` aus demselben Repo) im Zweig 620, dem Long Term Support Branch bis 09/2029, festgehalten mit `nvidia-driver-pinning-620`. Axel hat am 06.11. den LTS-Zweig gewählt; 580 bietet NVIDIA für Debian 13 nicht an, und Debians eigener Treiber (550) ist für das `cuda13`-Image von llama-swap zu alt (braucht ≥ 580). Für Uwe nichts zu tun | gesetzt |
+| 1.5 | Standard-Benutzer `admin` mit sudo ohne Passwort auf beiden Maschinen (Standard des Debian-AMI), erreichbar für Ansible (siehe §6) | Muss |
 | 1.6 | Tags `Name=kai-entry` bzw. `Name=kai-gpu` und `kai:role=entry` bzw. `kai:role=gpu` (für ein späteres dynamisches Inventar) | Soll |
-| 1.7 | Root-Volume `kai-entry` von 20 auf 30 GB (Images ~6 GB; AL2023 vergrößert das Dateisystem beim Start selbst), `kai-gpu` wie die AMI vorgibt (≥ 30 GB); Root enthält nur OS, Treiber und Images. Bleibt Root bei 20 GB, legt die Rolle Dockers `data-root` auf das Volume `kai-data` | Soll |
+| 1.7 | Root-Volume `kai-entry` von 20 auf 30 GB (Images ~6 GB; das AMI vergrößert das Dateisystem beim Start selbst), `kai-gpu` ebenfalls 30 GB (Treiber mit Kernel-Headern, Docker, CUDA-Image ~5 GB); Root enthält nur OS, Treiber und Images. Bleibt Root bei 20 GB, legt die Rolle Dockers `data-root` auf das Volume `kai-data` | Soll |
 
 ## 2. Platten
 
@@ -39,13 +39,15 @@ Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ bl
 | Ziel | Zweck | Maschine |
 |---|---|---|
 | `ghcr.io`, `pkg-containers.githubusercontent.com`, `registry-1.docker.io`, `auth.docker.io`, `production.cloudflare.docker.com` | Container-Images | beide |
-| AL2023-Paketspiegel in S3 (`al2023-repos-eu-central-1-*.s3.dualstack.eu-central-1.amazonaws.com`; ohne NAT über einen S3-Gateway-Endpunkt erreichbar) | Updates, Paket `docker` | beide |
-| `github.com`, `objects.githubusercontent.com` | Repo-Checkout, Compose-Plugin (Release-Download) | beide |
+| Debian-Spiegel `deb.debian.org`, `security.debian.org` (CDN) oder ein Spiegel, den Uwe festlegt | Updates, Pakete, Kernel-Header | beide |
+| `download.docker.com` | Docker CE und Compose-Plugin (Dockers apt-Repo) | beide |
+| S3-Bucket `amazon-ssm-eu-central-1` (ohne NAT über einen S3-Gateway-Endpunkt erreichbar) | SSM-Agent-Paket, einmalig per user-data (§6.1) | beide |
+| `github.com` | Repo-Checkout für die Administration | kai-entry |
 | `api.search.brave.com` | Websuche (MCP) | kai-entry |
-| `api.anthropic.com`, `claude.ai`, `registry.npmjs.org`, `nodejs.org` | Claude Code auf der Maschine (Login, Install) | kai-entry |
+| `api.anthropic.com`, `claude.ai`, `downloads.claude.ai` | Claude Code auf der Maschine (Login, apt-Repo) | kai-entry |
 | `api.openai.com`, `api.anthropic.com` | externe Modelle über LiteLLM, erst nach Beschluss des Teams | kai-entry, später |
 | `huggingface.co`, `*.hf.co` (CDN) | Modell-Download (einmalig pro Modell, 10–15 GB) | kai-gpu |
-| NVIDIA-Repo (`nvidia.github.io`, `developer.download.nvidia.com`) | Toolkit-Updates | kai-gpu |
+| `developer.download.nvidia.com` | NVIDIA-Treiber und Container Toolkit (CUDA-Repo für Debian 13) | kai-gpu |
 
 Alles andere kann ausgehend geblockt werden.
 
@@ -72,19 +74,19 @@ Offen (Uwe legt fest): VPN-Technik, Domain `unserkai.de` ja/nein, interner DNS-N
 
 ## 6. Admin-Zugang (Axel, Ansible, Claude Code)
 
-**Befund vom 05.11.:** Die Rolle `ssm-session-access-axel` erlaubt heute `ec2:DescribeInstances`, `Start`/`StopInstances`, `ssm:DescribeInstanceInformation` und `ssm:StartSession` mit dem Standard-Shell-Dokument; das reicht für eine Shell, aber nicht für Ansible. Auf `webui1` liegt kein SSH-Schlüssel, und die user-data ist ein Ubuntu-Skript, das auf Amazon Linux nicht läuft und ein Klartext-Passwort enthält.
+**Befund vom 05.11.:** Die Rolle `ssm-session-access-axel` erlaubt heute `ec2:DescribeInstances`, `Start`/`StopInstances`, `ssm:DescribeInstanceInformation` und `ssm:StartSession` mit dem Standard-Shell-Dokument; das reicht für eine Shell, aber nicht für Ansible. Auf `webui1` liegt kein SSH-Schlüssel, und die user-data ist ein Ubuntu-Skript (`snap install amazon-ssm-agent`) mit einem Klartext-Passwort; für Debian wird sie ohnehin neu geschrieben (§6.1, §6.3).
 
 | | Anforderung | Stufe |
 |---|---|---|
-| 6.1 | **SSM Session Manager** auf beiden Instanzen (Agent ist in AL2023 vorinstalliert und auf `webui1` aktiv; Instanzrolle mit `AmazonSSMManagedInstanceCore`) | Muss |
+| 6.1 | **SSM Session Manager** auf beiden Instanzen. Das Debian-AMI bringt den SSM-Agent nicht mit (AWS-Doku „Manually installing SSM Agent on Debian Server instances“); die user-data installiert ihn beim ersten Start aus dem regionalen Paket (`https://s3.eu-central-1.amazonaws.com/amazon-ssm-eu-central-1/latest/debian_amd64/amazon-ssm-agent.deb`, `dpkg -i`). Instanzrolle mit `AmazonSSMManagedInstanceCore` | Muss |
 | 6.2 | Session-Rolle für Axel zusätzlich: `ssm:StartSession` auf das Dokument `AWS-StartSSHSession` (für beide Instanzen), `ssm:TerminateSession`, `ssm:DescribeSessions`. Damit funktionieren Ansible (SSH über SSM-ProxyCommand), VSCode Remote-SSH und Claude Code auf `kai-entry` | Muss |
-| 6.3 | Axels SSH-Public-Key (`ansible/files/ssh_keys/axel.pub`, schon im Repo) in `authorized_keys` des Benutzers `ec2-user`: für neue Instanzen per user-data als `#cloud-config` mit `ssh_authorized_keys` (läuft auf AL2023 beim ersten Start), auf der laufenden `webui1` einmalig über die SSM-Shell. Danach pflegt die Rolle `users` die Schlüssel. Das Ubuntu-Skript mit dem Klartext-Passwort kommt aus dem Terraform-Code | Muss (einmalig) |
+| 6.3 | Axels SSH-Public-Key (`ansible/files/ssh_keys/axel.pub`, schon im Repo) in `authorized_keys` des Benutzers `admin`, per user-data als `#cloud-config` mit `ssh_authorized_keys` beim ersten Start (cloud-init ist im AMI); dieselbe user-data installiert den SSM-Agent (§6.1). Danach pflegt die Rolle `users` die Schlüssel. Das Ubuntu-Skript mit dem Klartext-Passwort kommt aus dem Terraform-Code | Muss (einmalig) |
 | 6.4 | AWS-CLI-Profil für Axel mit den Rechten aus 6.2 (MFA-geschützt; eingerichtet und geprüft am 05.11.) | Muss |
 | 6.5 | Start/Stop beider Instanzen durch Axel (heute für `webui1` vorhanden, für `kai-gpu` nachziehen): spart Abstimmungsrunden bei Installation, Tests und im Betrieb von `kai-gpu` | Muss |
 | 6.6 | Snapshot-Recht für Axel: `ec2:CreateSnapshot`, `ec2:DescribeSnapshots`, `ec2:DescribeVolumes` auf die beiden Volumes (S1-11), oder Uwe macht Snapshots auf Zuruf | Kann |
 | 6.7 | Lese-Rechte zum Prüfen der Umgebung: `ec2:DescribeImages`, `ec2:DescribeSecurityGroups`, `ec2:DescribeSubnets` | Kann |
 
-Was Axel dann auf `kai-entry` installiert (nativ, nicht Container): Node.js LTS, `claude` (Claude Code), `git`. Login mit Axels Anthropic-Abo; kein API-Key auf der Maschine nötig.
+Was Axel dann auf `kai-entry` installiert (nativ, nicht Container): Claude Code aus Anthropics apt-Repo und `git`, wie im Heimnetz. Login mit Axels Anthropic-Abo; kein API-Key auf der Maschine nötig.
 
 ## 7. Betrieb und Kosten
 
@@ -99,8 +101,8 @@ Was Axel dann auf `kai-entry` installiert (nativ, nicht Container): Node.js LTS,
 
 ## 8. Was Axel von Uwe braucht, bevor es losgeht
 
-1. `kai-entry`: `webui1` auf `t3.medium` vergrößert, Volume `kai-data` angehängt, Egress nach §3, Axels Key bei `ec2-user` (§6.3)
-2. `kai-gpu`: Instanz nach §1.3/1.4 mit Volume `kai-models`, Egress, Key; AMI-Daten (System, Release, Docker, Toolkit, Treiber) für `kai-gpu-pre`
-3. Instanz-IDs beider Maschinen, private DNS-Namen (§4.1, §4.4)
-4. Session-Rolle mit `AWS-StartSSHSession` (§6.2); Prüfung: `ssh` über den SSM-ProxyCommand liefert eine Shell als `ec2-user`
+1. `kai-entry`: `webui1` mit dem Debian-13-AMI neu aufgesetzt (§1.2), `t3.medium`, Root 30 GB, Volume `kai-data` angehängt, Egress nach §3, user-data mit SSM-Agent und Axels Key bei `admin` (§6.1, §6.3)
+2. `kai-gpu`: Instanz nach §1.3 aus demselben AMI, Root 30 GB, Volume `kai-models`, Egress, dieselbe user-data
+3. Instanz-IDs beider Maschinen, private DNS-Namen (§4.1, §4.4), Name des AMI (§1.2)
+4. Session-Rolle mit `AWS-StartSSHSession` (§6.2); Prüfung: `ssh` über den SSM-ProxyCommand liefert eine Shell als `admin`
 5. Entscheidung zu §5 (VPN/öffentlich), damit `kai_webui_bind` und `kai_litellm_bind` gesetzt werden können; kann auch nach der Installation geändert werden
