@@ -1,0 +1,2 @@
+# Temporary: removed together with host unserkai in plan 2.10.
+^ansible/inventory/host_vars/unserkai\.yml:
