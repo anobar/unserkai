@@ -1,5 +1,5 @@
 ---
-- name: Kai-entry konfigurieren
+- name: Kai-Entry konfigurieren
   hosts: kai_entry
   gather_facts: true
   roles:
@@ -7,8 +7,12 @@
       tags: [common, base]
     - role: users
       tags: [users]
+    - role: kai_volume
+      tags: [kai_volume, kai_entry]
     - role: docker
       tags: [docker]
+    - role: kai_entry
+      tags: [kai_entry]
 
 - name: Kai-GPU konfigurieren
   hosts: kai_gpu
@@ -18,5 +22,9 @@
       tags: [common, base]
     - role: users
       tags: [users]
+    - role: kai_volume
+      tags: [kai_volume, kai_gpu]
     - role: docker
       tags: [docker]
+    - role: kai_gpu
+      tags: [kai_gpu]

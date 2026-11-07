@@ -6,3 +6,16 @@ kai_gpu_enabled: true
 
 # Adresse, auf der llama-swap (8080) lauscht.
 kai_gpu_bind: "0.0.0.0"
+
+# Modell-Volume: per Label eingebunden, nie per Geraetename (Architektur E4).
+kai_volume_label: kai-models
+kai_volume_mountpoint: /opt/kai/models
+
+# Inhalt der daemon.json; die Rolle docker schreibt sie als einziger Schreiber,
+# die Runtime nvidia kommt nur mit GPU dazu (nie per nvidia-ctk).
+docker_daemon_config: >-
+  {{ {'log-driver': 'json-file',
+      'log-opts': {'max-size': '10m', 'max-file': '3'},
+      'live-restore': true}
+     | combine({'runtimes': {'nvidia': {'path': 'nvidia-container-runtime', 'runtimeArgs': []}}}
+               if kai_gpu_enabled | bool else {}) }}

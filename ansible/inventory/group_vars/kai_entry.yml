@@ -7,3 +7,9 @@ kai_gpu_endpoint: "http://gpu.kai.internal:8080"
 # Adresse, auf der Open WebUI (3000) und LiteLLM (4000) lauschen.
 kai_webui_bind: "127.0.0.1"
 kai_litellm_bind: "127.0.0.1"
+kai_webui_port: 3000
+kai_litellm_port: 4000
+
+# Datenvolume: per Label eingebunden, nie per Geraetename (Architektur E4).
+kai_volume_label: kai-data
+kai_volume_mountpoint: /opt/kai

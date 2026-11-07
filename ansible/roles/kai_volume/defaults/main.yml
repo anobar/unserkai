@@ -1,0 +1,11 @@
+---
+# Datenvolume per Dateisystem-Label einbinden (nie per Geraetename).
+#
+# Label des Dateisystems, zum Beispiel kai-data oder kai-models (Pflicht).
+kai_volume_label: ""
+# Einhaengepunkt.
+kai_volume_mountpoint: ""
+# true auf den AWS-Maschinen: das Volume muss da sein, sonst Abbruch.
+# false auf Test-VMs: ohne Volume bleibt der Einhaengepunkt ein Verzeichnis.
+kai_volume_required: false
+kai_volume_fstype: ext4

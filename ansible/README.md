@@ -166,3 +166,9 @@ Jede Gruppe hat in `playbooks/site.yml` ihren Play; `common`, `users` und
   Debian mit dem offiziellen Docker-Repository.
 - Benutzer ohne SSH-Key: Datei `files/ssh_keys/<name>.pub` anlegen und
   `make deploy TAGS=users` erneut ausführen.
+
+## Kai-Rollen
+
+- `kai_volume` bindet das Datenvolume per Dateisystem-Label ein (`kai-data` unter `/opt/kai`, `kai-models` unter `/opt/kai/models`); mit `kai_volume_required: true` (AWS) legt sie auf der einzigen leeren Platte das Dateisystem an, ohne Volume (Test-VMs) bleibt der Einhängepunkt ein Verzeichnis.
+- `kai_entry` rollt `kai/compose/entry` nach `/opt/kai` aus und startet den Stack; die `.env` mit den Geheimnissen legt ein Mensch an (aus `kai/compose/entry/.env.example`, Modus 0600), die Rolle prüft sie nur und bricht sonst ab.
+- `kai_gpu` installiert auf Maschinen mit `kai_gpu_enabled: true` den NVIDIA-Treiber (Zweig `kai_gpu_driver_branch`) und das Container Toolkit, holt die Modelle mit `kai-models-pull` und startet `kai/compose/gpu`; ohne GPU läuft llama-swap über `compose.cpu.yaml` auf der CPU.

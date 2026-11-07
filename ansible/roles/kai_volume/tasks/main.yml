@@ -1,0 +1,66 @@
+---
+- name: Eingaben pruefen
+  ansible.builtin.assert:
+    that:
+      - kai_volume_label | length > 0
+      - kai_volume_mountpoint | length > 0
+    quiet: true
+
+- name: Dateisystem-Werkzeuge installieren
+  ansible.builtin.apt:
+    name: e2fsprogs
+    state: present
+
+- name: Dateisystem mit dem Label suchen
+  ansible.builtin.command:
+    cmd: blkid -L {{ kai_volume_label }}
+  register: kai_volume_found
+  changed_when: false
+  failed_when: kai_volume_found.rc not in [0, 2]
+
+- name: Unbenutzte Datenplatten suchen
+  ansible.builtin.command:
+    cmd: lsblk --json --paths --output NAME,TYPE,FSTYPE
+  register: kai_volume_lsblk
+  changed_when: false
+  when: kai_volume_found.rc != 0 and kai_volume_required | bool
+
+- name: Genau eine unbenutzte Datenplatte verlangen
+  ansible.builtin.assert:
+    that: kai_volume_candidates | length == 1
+    fail_msg: >-
+      Kein Dateisystem mit dem Label {{ kai_volume_label }} und keine einzelne
+      leere Platte gefunden (Kandidaten: {{ kai_volume_candidates }}).
+    quiet: true
+  vars:
+    kai_volume_candidates: >-
+      {{ (kai_volume_lsblk.stdout | from_json).blockdevices
+         | selectattr('type', 'eq', 'disk') | rejectattr('children', 'defined')
+         | selectattr('fstype', 'none') | map(attribute='name') | list }}
+  when: kai_volume_found.rc != 0 and kai_volume_required | bool
+
+- name: Dateisystem mit dem Label anlegen
+  ansible.builtin.command:
+    cmd: mkfs.{{ kai_volume_fstype }} -L {{ kai_volume_label }} {{ (kai_volume_lsblk.stdout | from_json).blockdevices
+      | selectattr('type', 'eq', 'disk') | rejectattr('children', 'defined')
+      | selectattr('fstype', 'none') | map(attribute='name') | first }}
+  changed_when: true
+  when: kai_volume_found.rc != 0 and kai_volume_required | bool
+
+- name: Volume per Label einbinden
+  ansible.posix.mount:
+    path: "{{ kai_volume_mountpoint }}"
+    src: "LABEL={{ kai_volume_label }}"
+    fstype: "{{ kai_volume_fstype }}"
+    opts: defaults,nofail
+    state: mounted
+  when: kai_volume_found.rc == 0 or kai_volume_required | bool
+
+- name: Einhaengepunkt als Verzeichnis sicherstellen (ohne Volume)
+  ansible.builtin.file:
+    path: "{{ kai_volume_mountpoint }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: kai_volume_found.rc != 0 and not kai_volume_required | bool

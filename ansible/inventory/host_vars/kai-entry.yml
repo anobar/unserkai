@@ -3,6 +3,8 @@
 # Instanz-ID und Profil traegt Uwe nach dem Anlegen der Instanz ein.
 kai_instance_id: ""
 ansible_user: admin
+# In AWS muss das Datenvolume da sein; die Rolle bricht sonst ab.
+kai_volume_required: true
 # Der Host, dessen Modelle LiteLLM ausliefert (kai_gpu_models).
 kai_gpu_peer: kai-gpu
 ansible_ssh_common_args: >-

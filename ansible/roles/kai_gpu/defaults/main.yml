@@ -1,0 +1,17 @@
+---
+# Installationsverzeichnis auf der Maschine; die Modelle liegen darunter in models/.
+kai_gpu_install_dir: /opt/kai
+kai_gpu_models_dir: "{{ kai_gpu_install_dir }}/models"
+# Verzeichnis mit compose.yaml, compose.cpu.yaml und llama-swap.yaml.j2 im Repo.
+kai_gpu_src_dir: "{{ playbook_dir }}/../../kai/compose/gpu"
+# Skript und Liste fuer den Modell-Download (Plan 2.6).
+kai_gpu_models_pull_src: "{{ playbook_dir }}/../../kai/bin/kai-models-pull"
+kai_gpu_models_list_src: "{{ playbook_dir }}/../../kai/models.list"
+# Mit false laeuft alles ohne GPU: kein Treiber, keine GPU-Reservierung.
+kai_gpu_enabled: true
+# Treiberzweig von NVIDIA (Long Term Support Branch).
+kai_gpu_driver_branch: "620"
+kai_gpu_bind: "127.0.0.1"
+kai_gpu_port: 8080
+# Sekunden, die 'docker compose up --wait' auf gesunde Dienste wartet.
+kai_gpu_wait_timeout: 300

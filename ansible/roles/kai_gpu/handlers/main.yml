@@ -1,0 +1,11 @@
+---
+- name: Neustart nach neuem Treiber
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+
+- name: Llama-swap neu starten
+  ansible.builtin.command:
+    cmd: >-
+      docker compose --project-directory {{ kai_gpu_install_dir }}
+      --env-file {{ kai_gpu_install_dir }}/stack.env restart llama-swap
+  changed_when: true

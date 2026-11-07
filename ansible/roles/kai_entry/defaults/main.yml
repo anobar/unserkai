@@ -1,0 +1,9 @@
+---
+# Installationsverzeichnis auf der Maschine (Mountpunkt des Volumes kai-data).
+kai_entry_install_dir: /opt/kai
+# Verzeichnis mit compose.yaml und litellm.yaml.j2 im Repo.
+kai_entry_src_dir: "{{ playbook_dir }}/../../kai/compose/entry"
+# Bind-Adressen und Ports (kai_webui_bind, kai_litellm_bind, kai_webui_port, kai_litellm_port)
+# stehen in group_vars/kai_entry.yml.
+# Sekunden, die 'docker compose up --wait' auf gesunde Dienste wartet.
+kai_entry_wait_timeout: 300

@@ -2,6 +2,8 @@
 # kai-gpu in AWS (g4dn.xlarge, NVIDIA T4): Zugang ueber SSM Session Manager (Phase 3).
 kai_instance_id: ""
 ansible_user: admin
+# In AWS muss das Datenvolume da sein; die Rolle bricht sonst ab.
+kai_volume_required: true
 ansible_ssh_common_args: >-
   -o StrictHostKeyChecking=accept-new
   -o ProxyCommand="aws ssm start-session --target {{ kai_instance_id }}
