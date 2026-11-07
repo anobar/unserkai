@@ -1,6 +1,6 @@
 # Ansible-Konfiguration für Linux-Maschinen
 
-Diese Struktur konfiguriert mehrere Debian-/Ubuntu-Maschinen zentral. Die
+Diese Struktur konfiguriert mehrere Debian-13-Maschinen zentral. Die
 Kai-Maschinen `kai-entry` und `kai-gpu` (je mit Test-VM `-pre`) erhalten die
 Benutzerkonten aus `group_vars/all.yml` und Docker inklusive Compose-Plugin.
 Die Rolle `cmake` liegt noch im Repo, läuft aber in `site.yml` auf keiner Gruppe.
@@ -29,8 +29,8 @@ ansible/
 
 ## Voraussetzungen
 
-- Zielsysteme: Debian oder Ubuntu (die Rollen prüfen das und brechen sonst mit
-  einer klaren Meldung ab).
+- Zielsysteme: Debian 13 auf x86_64 oder aarch64 (die Rollen prüfen das und
+  brechen sonst mit einer klaren Meldung ab).
 - Controller: Python 3.10+, `ansible-core >= 2.16`.
 - SSH-Zugang zum Zielhost mit einem Benutzer, der `sudo` ausführen darf
   (im Beispiel `ansible`).
@@ -150,8 +150,11 @@ Jede Gruppe hat in `playbooks/site.yml` ihren Play; `common`, `users` und
 - `StrictHostKeyChecking=accept-new` akzeptiert den Hostkey beim ersten
   Kontakt. In Umgebungen mit festen Hostkeys besser `known_hosts` vorab pflegen
   und die Option entfernen.
-- Die Rollen unterstützen aktuell Debian/Ubuntu. Für RHEL-Derivate wären
-  zusätzliche Task-Dateien (dnf, Docker-Repo für RHEL) nötig.
+- Die Rollen unterstützen nur Debian; ein anderes Betriebssystem bräuchte eigene
+  Task-Dateien.
+- `kai_http_proxy` (Standard leer) setzt den Egress-Proxy der Test-VMs: apt
+  (`/etc/apt/apt.conf.d/90kai-proxy`), ein Drop-in für `docker.service` und
+  `/opt/kai/proxy.env` für Container; `kai_no_proxy` nimmt das Testnetz aus.
 
 ## Troubleshooting
 
@@ -160,6 +163,6 @@ Jede Gruppe hat in `playbooks/site.yml` ihren Play; `common`, `users` und
 - sudo fragt nach Passwort: `-K` mitgeben oder `users_passwordless_sudo`
   gezielt setzen.
 - Docker-Installation bricht ab: Distribution prüfen; die Rolle unterstützt nur
-  Debian und Ubuntu mit dem offiziellen Docker-Repository.
+  Debian mit dem offiziellen Docker-Repository.
 - Benutzer ohne SSH-Key: Datei `files/ssh_keys/<name>.pub` anlegen und
   `make deploy TAGS=users` erneut ausführen.

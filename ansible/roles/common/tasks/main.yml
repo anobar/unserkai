@@ -2,11 +2,28 @@
 - name: Unterstuetzte Distribution pruefen
   ansible.builtin.assert:
     that:
-      - ansible_facts['os_family'] == 'Debian'
+      - ansible_facts['distribution'] == 'Debian'
     fail_msg: >-
-      Diese Rolle unterstuetzt nur Debian und Ubuntu.
+      Diese Rolle unterstuetzt nur Debian.
       Gefunden: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}
     quiet: true
+
+- name: Proxy fuer apt eintragen
+  ansible.builtin.copy:
+    content: |
+      Acquire::http::Proxy "{{ kai_http_proxy }}";
+      Acquire::https::Proxy "{{ kai_http_proxy }}";
+    dest: /etc/apt/apt.conf.d/90kai-proxy
+    owner: root
+    group: root
+    mode: "0644"
+  when: kai_http_proxy | default('') | length > 0
+
+- name: Proxy fuer apt entfernen
+  ansible.builtin.file:
+    path: /etc/apt/apt.conf.d/90kai-proxy
+    state: absent
+  when: kai_http_proxy | default('') | length == 0
 
 - name: Paketindex aktualisieren
   ansible.builtin.apt:
