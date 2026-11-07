@@ -12,7 +12,7 @@ Stand: 2026-11-05 · Status: Vorschlag für den ersten Durchstich (S1-02); Model
 
 | | |
 |---|---|
-| Datei | `ggml-org/gpt-oss-20b-GGUF` → `gpt-oss-20b-mxfp4.gguf`, ~12 GB (auf lezki als `gpt-oss-20b` im Einsatz) |
+| Datei | `ggml-org/gpt-oss-20b-GGUF` → `gpt-oss-20b-MXFP4.gguf`, ~12 GB (auf lezki als `gpt-oss-20b` im Einsatz) |
 | Architektur | MoE, 21 B gesamt / ~3,6 B aktiv; natives MXFP4 (keine Qualitätsverlust-Quantisierung nötig) |
 | Kontext | 32k Token eingestellt (KV-Cache ~2–3 GB mit `-fa on`); technisch bis 128k, passt aber nicht in 16 GB |
 | Stärken | Reasoning (einstellbar low/medium/high), Werkzeugaufrufe funktionieren zuverlässig (wichtig für Brave-Suche), Deutsch gut, Apache-2.0 |
@@ -28,7 +28,7 @@ models:
   gpt-oss-20b:
     cmd: >
       /app/llama-server --port ${PORT}
-      -m /models/gpt-oss-20b-mxfp4.gguf
+      -m /models/gpt-oss-20b-MXFP4.gguf
       --ctx-size 32768 --parallel 4 -fa on --jinja
       --chat-template-kwargs '{"reasoning_effort":"medium"}'
       -ngl 999 --host 0.0.0.0
