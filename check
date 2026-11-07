@@ -10,7 +10,7 @@ usage() {
   cat <<EOF
 Usage: check [-h|--help] [--only <step>]
 
-Steps: ansible-lint, yamllint, shellcheck, compose, templates, gitleaks, private-addresses
+Steps: ansible-lint, yamllint, shellcheck, python, compose, templates, gitleaks, private-addresses
 EOF
 }
 
@@ -58,6 +58,21 @@ step_shellcheck() {
     return 0
   fi
   shellcheck -x "${files[@]}"
+}
+
+step_python() {
+  need python3 || return 1
+  local f rc=0 found=0
+  while IFS= read -r -d '' f; do
+    [[ -f "$f" ]] || continue
+    [[ "$f" == bootstrap/* || "$f" == aws/* ]] && continue
+    if [[ "$f" == *.py ]] || head -n1 "$f" | grep -qE '^#!.*\bpython3?\b'; then
+      found=1
+      python3 -I -c 'import sys; compile(open(sys.argv[1]).read(), sys.argv[1], "exec")' "$f" || rc=1
+    fi
+  done < <(git ls-files -z)
+  [[ $found -eq 1 ]] || echo "note: no python files found"
+  return "$rc"
 }
 
 step_compose() {
@@ -189,7 +204,7 @@ main() {
     esac
   done
 
-  local all_steps=(ansible-lint yamllint shellcheck compose templates gitleaks private-addresses)
+  local all_steps=(ansible-lint yamllint shellcheck python compose templates gitleaks private-addresses)
   local failures=0
 
   if [[ -n "$only" ]]; then
