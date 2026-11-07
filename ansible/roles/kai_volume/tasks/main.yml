@@ -8,7 +8,7 @@
 
 - name: Dateisystem-Werkzeuge installieren
   ansible.builtin.apt:
-    name: e2fsprogs
+    name: xfsprogs
     state: present
 
 - name: Dateisystem mit dem Label suchen
@@ -18,6 +18,55 @@
   changed_when: false
   check_mode: false
   failed_when: kai_volume_found.rc not in [0, 2]
+
+- name: Eigenschaften des gefundenen Dateisystems lesen
+  ansible.builtin.command:
+    cmd: blkid -o export {{ kai_volume_found.stdout }}
+  register: kai_volume_info
+  changed_when: false
+  check_mode: false
+  when: kai_volume_found.rc == 0
+
+- name: Dateisystemtyp des gefundenen Labels verlangen
+  ansible.builtin.assert:
+    that: kai_volume_props.TYPE | default('') == kai_volume_fstype
+    fail_msg: >-
+      Das Dateisystem mit dem Label {{ kai_volume_label }} ({{ kai_volume_found.stdout }})
+      hat den Typ {{ kai_volume_props.TYPE | default('unbekannt') }}, verlangt ist {{ kai_volume_fstype }};
+      die Rolle formatiert nie um.
+    quiet: true
+  vars:
+    kai_volume_props: "{{ dict(kai_volume_info.stdout_lines | select('search', '=') | map('split', '=', 1) | list) }}"
+  when: kai_volume_found.rc == 0
+
+- name: Fstab lesen
+  ansible.builtin.slurp:
+    src: /etc/fstab
+  register: kai_volume_fstab
+  when: kai_volume_found.rc == 0
+
+- name: Doppelte Einhaengepunkte desselben Geraets suchen
+  ansible.builtin.set_fact:
+    kai_volume_duplicates: >-
+      {% set p = dict(kai_volume_info.stdout_lines | select('search', '=') | map('split', '=', 1) | list) %}
+      {% set ids = [kai_volume_found.stdout] + (['UUID=' ~ p.UUID] if 'UUID' in p else [])
+         + (['PARTUUID=' ~ p.PARTUUID] if 'PARTUUID' in p else []) + ['LABEL=' ~ kai_volume_label] %}
+      {% set r = [] %}
+      {% for l in (kai_volume_fstab.content | b64decode).splitlines() %}
+      {% set f = l.split() %}
+      {% if f | length >= 2 and not l.strip().startswith('#') and f[0] in ids and f[1] != kai_volume_mountpoint %}
+      {% set _ = r.append(f[1]) %}
+      {% endif %}
+      {% endfor %}
+      {{ r | to_json }}
+  when: kai_volume_found.rc == 0
+
+- name: Doppelte Einhaengung aus fstab entfernen und aushaengen
+  ansible.posix.mount:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ kai_volume_duplicates | default('[]') | from_json }}"
+  when: kai_volume_found.rc == 0
 
 - name: Datenplatte benannt verlangen
   ansible.builtin.assert:

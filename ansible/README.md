@@ -169,7 +169,7 @@ Jede Gruppe hat in `playbooks/site.yml` ihren Play; `common`, `users` und
 
 ## Kai-Rollen
 
-- `kai_volume` bindet das Datenvolume per Dateisystem-Label ein (`kai-data` unter `/opt/kai`, `kai-models` unter `/opt/kai/models`); mit `kai_volume_required: true` (AWS) legt sie auf der Platte, die `kai_volume_device` in den `host_vars` als Pfad unter `/dev/disk/by-id` benennt, das Dateisystem an (nur wenn die Platte leer ist), ohne Volume (Test-VMs) bleibt der Einhängepunkt ein Verzeichnis.
+- `kai_volume` bindet das Datenvolume per Dateisystem-Label ein (`kai-data` unter `/opt/kai`, `kai-models` unter `/opt/kai/models`); mit `kai_volume_required: true` (AWS) legt sie auf der Platte, die `kai_volume_device` in den `host_vars` als Pfad unter `/dev/disk/by-id` benennt, ein XFS-Dateisystem an (nur wenn die Platte leer ist; ein vorhandenes Label mit anderem Typ bricht ab, es wird nie umformatiert, und fstab-Zeilen desselben Geräts unter anderem Einhängepunkt werden entfernt), ohne Volume (Test-VMs) bleibt der Einhängepunkt ein Verzeichnis.
 - `kai_entry` rollt `kai/compose/entry` nach `/opt/kai` aus und startet den Stack; die `.env` mit den Geheimnissen legt ein Mensch an (aus `kai/compose/entry/.env.example`, Modus 0600), die Rolle prüft sie nur und bricht sonst ab.
 - `kai_gpu` installiert auf Maschinen mit `kai_gpu_enabled: true` den NVIDIA-Treiber (Zweig `kai_gpu_driver_branch`) und das Container Toolkit, holt die Modelle mit `kai-models-pull` und startet `kai/compose/gpu`; ohne GPU läuft llama-swap über `compose.cpu.yaml` auf der CPU.
 
