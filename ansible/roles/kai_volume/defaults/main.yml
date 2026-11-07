@@ -9,7 +9,7 @@ kai_volume_mountpoint: ""
 # false auf Test-VMs: ohne Volume bleibt der Einhaengepunkt ein Verzeichnis.
 kai_volume_required: false
 kai_volume_fstype: ext4
-# Glob-Muster unter /dev/disk/by-id, die die Datenplatte eindeutig benennen
-# (AWS: nvme-Amazon_Elastic_Block_Store_*, Test-VM: virtio-kai-models).
-# Pflicht, wenn kai_volume_required gilt; es zaehlen nur Platten ohne Partition und ohne Dateisystem.
-kai_volume_by_id: []
+# Pfad der Datenplatte unter /dev/disk/by-id (host_vars), Pflicht wenn kai_volume_required gilt
+# und noch kein Dateisystem mit dem Label existiert; die Platte muss leer sein.
+# AWS: nvme-Amazon_Elastic_Block_Store_vol<ID ohne Bindestrich>, Test-VM: virtio-<Label>.
+kai_volume_device: ""

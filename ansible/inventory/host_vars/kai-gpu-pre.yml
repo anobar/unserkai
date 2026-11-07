@@ -9,5 +9,5 @@ kai_gpu_models:
     ctx_size: 4096
 # Der Treiber der Test-VM gibt der Datenplatte (vdc) die Seriennummer kai-models, die Platte vdb (scratch) keine.
 kai_volume_required: true
-kai_volume_by_id:
-  - virtio-kai-models
+# Datenplatte (Seriennummer = Label); die Ersatzplatte fuer das Instance Storage heisst virtio-kai-scratch.
+kai_volume_device: /dev/disk/by-id/virtio-kai-models
