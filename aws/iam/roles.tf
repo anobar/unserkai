@@ -130,7 +130,7 @@ resource "aws_iam_role" "ssm_session_access" {
       Action = "sts:AssumeRole"
       Condition = {
         Bool = { "aws:MultiFactorAuthPresent" = "true" }
-        NumericLessThanEquals = { "aws:MultiFactorAuthAge" = "3600" }
+        NumericLessThanEquals = { "aws:MultiFactorAuthAge" = "86400" }
       }
     }]
   })

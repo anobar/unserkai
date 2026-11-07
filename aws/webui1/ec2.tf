@@ -41,7 +41,7 @@ module "ec2" {
     SSMAccess	= "UnserkaiUserSelfManagement"
   }
   # firewall_rules               = local.firewall_rules
-  volume_size                  = 20
+  volume_size                  = 30
   volume_tags = {
     Name         = "webui1"
     dlm_snapshot = "true"

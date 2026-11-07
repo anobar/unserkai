@@ -16,6 +16,7 @@ resource "aws_instance" "this" {
     volume_type = "gp3"
     volume_size = var.volume_size
     encrypted = true
+    delete_on_termination = false
     tags = merge(var.volume_tags, { Name = var.name })
   }
 
