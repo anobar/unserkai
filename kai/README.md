@@ -20,7 +20,28 @@ Kai ist ein gemeinsamer KI-Chat für vier Freunde. Er besteht aus zwei gemietete
 | Uwe (Infrastruktur) | [Anforderungen an Maschinen, Platten, Netz, Zugang](docs/02_anforderungen-infrastruktur.md) und die [Bestandsaufnahme der beiden Maschinen](docs/instance_specs.md) |
 | Modellwahl | [Modellvorschlag für die T4-Grafikkarte](docs/03_modellvorschlag.md) |
 | Vorgehen | [Plan: Phasen, Aufgaben, Prüfungen](docs/04_plan.md) |
-| Admins | [compose/entry/.env.example](compose/entry/.env.example): welche Zugangsdaten gebraucht werden (ab Phase 2) |
+| Admins | [compose/entry/.env.example](compose/entry/.env.example): welche Zugangsdaten gebraucht werden, und der Abschnitt „Für Admins“ unten |
+
+## Kurzanleitung für Nutzer
+
+1. **Adresse und Konto:** Die Adresse der Chat-Oberfläche und dein Konto bekommst du von Axel oder Uwe (der Zugangsweg ist noch offen, [Architektur §5](docs/01_architektur.md)). Das Passwort ist nur für dich; ändere es nach der ersten Anmeldung (Profil → Konto).
+2. **Chatten:** Wähle oben das Modell und schreib los. PC und Telefon gehen im Browser, eine App brauchst du nicht.
+3. **Websuche:** Schalte unter dem Eingabefeld das Werkzeug „Brave Search“ ein, wenn das Modell aktuelle Informationen aus dem Internet holen soll. Dabei geht der Suchtext an Brave; schreib also nichts hinein, was nicht nach draußen soll.
+4. **Beim ersten Satz nach einer Pause** dauert die Antwort länger (das Modell wird geladen, 10 bis 40 Sekunden, auf einer frisch gestarteten Maschine mehr).
+5. **„Modell nicht erreichbar“ oder Fehlermeldung nach etwa zwei Minuten:** Die Grafikkarten-Maschine ist aus. Sag Axel oder Uwe Bescheid, sie schalten sie ein; deine Verläufe bleiben erhalten.
+6. **Datenschutz:** Gespräche liegen nur auf unserer Maschine in Frankfurt; der Admin der Oberfläche kann sie technisch einsehen.
+
+## Für Admins
+
+Ablauf auf einer frischen Maschine: [ansible/README.md, „Kai: Arbeitsablauf“](../ansible/README.md). Werkzeuge in `kai/bin/`:
+
+| Skript | Wofür |
+|---|---|
+| `kai-pin-images` | Image-Tags mit Digest festschreiben (`--check` meldet ungepinnte Images) |
+| `kai-models-pull` | Modelle aus `kai/models.list` laden, mit Prüfsumme |
+| `kai-bootstrap` | Ersteinrichtung auf `kai-entry`: LiteLLM-Key, Admin-Konto, Verbindung, Konten aus einer Liste, Brave-Werkzeug, Registrierung schließen; wiederholbar |
+| `kai-smoke` | Rauchtest nach dem Deployment: Healthchecks, Modellliste, ein Chat durch die ganze Kette |
+| `kai-gpu` | `kai-gpu` per AWS-CLI starten, stoppen, abfragen (`status\|start\|stop`); Profil und Instanz-ID ausdrücklich angeben |
 
 ## Bausteine
 
@@ -41,4 +62,4 @@ Der Verteiler kann weitere Rechenknoten aufnehmen, ohne dass sich für die Nutze
 
 ## Stand
 
-Phase 1 (Design) in Abstimmung · Uwe hat die kleine Maschine angelegt, Befund in der Bestandsaufnahme · Phase 2 (Skripte) und Phase 3 (Umsetzung) folgen · Aufgaben in ClickUp, Sprint 01.
+Phase 1 (Design) in Abstimmung · Phase 2 (Skripte) fertig und gegen Test-VMs geprüft (Pull Requests im Fork) · Phase 3 (Umsetzung auf den AWS-Maschinen) wartet auf die Punkte aus [02 §8](docs/02_anforderungen-infrastruktur.md) · Aufgaben in ClickUp, Sprint 01.
