@@ -28,7 +28,7 @@ Harnesses (OpenCode, OpenClaw, …) ──────────────�
 │       │ MCP (Streamable HTTP)                 │                     Budgets, Verbrauch) │
 │       └──────────▶ [brave-mcp] :8000 ── HTTPS ─│──▶ api.search.brave.com (extern)      │
 │                                               │                                        │
-│  Volume /opt/kai (EBS): open-webui-data · litellm-db · .env                            │
+│  Volume /opt/kai (EBS): data/open-webui · data/litellm-db · .env                            │
 └───────────────────────────────────────────────┼────────────────────────────────────────┘
                                                 │ OpenAI-API an gpu.kai.internal:8080
                                                 │ (nur im VPC, Security Group)
@@ -81,8 +81,8 @@ Begründungen:
 
 | Maschine | Daten | Ort | Wächst? | Sicherung |
 |---|---|---|---|---|
-| kai-entry | Benutzerkonten, Chat-Verlauf, hochgeladene Dokumente, Einstellungen | `/opt/kai/open-webui-data` (`/app/backend/data`, SQLite + Dateien) | ja, langsam | EBS-Snapshot des Volumes `kai-data` (S1-11) |
-| kai-entry | LiteLLM-Keys, Budgets, Verbrauch | `/opt/kai/litellm-db` (Postgres) | langsam | gleicher Snapshot |
+| kai-entry | Benutzerkonten, Chat-Verlauf, hochgeladene Dokumente, Einstellungen | `/opt/kai/data/open-webui` (`/app/backend/data`, SQLite + Dateien) | ja, langsam | EBS-Snapshot des Volumes `kai-data` (S1-11) |
+| kai-entry | LiteLLM-Keys, Budgets, Verbrauch | `/opt/kai/data/litellm-db` (Postgres) | langsam | gleicher Snapshot |
 | kai-entry | `.env` (Geheimnisse) | `/opt/kai/.env` | nein | gleicher Snapshot + Team-KeePass |
 | kai-entry | Compose, `litellm.yaml` | `/opt/kai/` (von Ansible verwaltet) | nein | im Git |
 | kai-gpu | Modelldateien (GGUF) | `/opt/kai/models` (Volume `kai-models`) | pro Modell 5–15 GB | **nicht** nötig: wiederbeschaffbar; Snapshot optional, um einen Maschinenwechsel zu beschleunigen |
@@ -94,7 +94,7 @@ Ein Sprachmodell **speichert nichts**. Was gespeichert wird (Chats, Uploads), li
 
 ### Secrets
 
-- Alle Geheimnisse liegen auf `kai-entry` in `/opt/kai/.env`, Rechte `0600 root`, **nicht** im Git: `BRAVE_API_KEY`, `WEBUI_SECRET_KEY` (signiert Sitzungen), `LITELLM_MASTER_KEY` (Admin-Key von LiteLLM), `LITELLM_SALT_KEY` (verschlüsselt gespeicherte Anbieter-Keys, darf nach dem ersten Start nie wechseln), `POSTGRES_PASSWORD`; später `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`. Im Repo liegt nur [`compose/entry/.env.example`](../compose/entry/.env.example) mit Platzhaltern.
+- Alle Geheimnisse liegen auf `kai-entry` in `/opt/kai/.env`, Rechte `0600 root`, **nicht** im Git: `BRAVE_API_KEY`, `WEBUI_SECRET_KEY` (signiert Sitzungen), `LITELLM_MASTER_KEY` (Admin-Key von LiteLLM), `LITELLM_SALT_KEY` (verschlüsselt gespeicherte Anbieter-Keys, darf nach dem ersten Start nie wechseln), `LITELLM_DB_PASSWORD`; später `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`. Im Repo liegt nur [`compose/entry/.env.example`](../compose/entry/.env.example) mit Platzhaltern.
 - Virtuelle Keys für Nutzer und Harnesses entstehen in LiteLLM (UI oder API) und liegen in der Postgres-Datenbank, nicht in `.env`.
 - `kai-gpu` hat kein Geheimnis: llama-swap verlangt keinen Key, der Schutz ist die Security Group.
 - Compose liest `.env` automatisch; Container bekommen Keys per `env_file`, nicht auf der Kommandozeile (sonst stehen sie in `docker inspect` und der Shell-History).

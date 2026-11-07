@@ -10,6 +10,16 @@
   loop:
     - "{{ kai_entry_install_dir }}"
     - "{{ kai_entry_install_dir }}/data"
+  loop_control:
+    label: "{{ item }}"
+
+# Besitzer und Rechte setzen die Container selbst (Postgres: Benutzer 999, Modus 0700);
+# die Rolle legt die Verzeichnisse nur an und fasst vorhandene nie an.
+- name: Datenverzeichnisse der Container anlegen
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  loop:
     - "{{ kai_entry_install_dir }}/data/open-webui"
     - "{{ kai_entry_install_dir }}/data/litellm-db"
   loop_control:
