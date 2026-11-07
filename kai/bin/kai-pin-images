@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# kai-pin-images: pin every image: line in kai/compose/*/compose.yaml to tag + digest.
+# kai-pin-images: pin every image: line in kai/compose/*/compose*.yaml to tag + digest.
 # Modes:
 #   no argument: resolve digests only for images that have none and rewrite in place.
 #   --update: re-resolve all digests (strip an existing @sha256 first).
@@ -103,7 +103,7 @@ root=$(git rev-parse --show-toplevel)
 cd "$root"
 
 shopt -s nullglob
-files=(kai/compose/*/compose.yaml)
+files=(kai/compose/*/compose*.yaml)
 shopt -u nullglob
 
 if [[ ${#files[@]} -eq 0 ]]; then
