@@ -12,6 +12,5 @@ ansible_ssh_common_args: >-
   -o ProxyCommand="aws ssm start-session --target {{ kai_instance_id }}
   --region {{ kai_aws_region }} --profile {{ kai_aws_profile }}
   --document-name AWS-StartSSHSession --parameters portNumber=%p"
-# Das Volume kai-data fehlt noch (Bestandsaufnahme 2.1); danach hier den Pfad eintragen:
-# nvme-Amazon_Elastic_Block_Store_vol<ID ohne Bindestrich>. Leer: die Rolle bricht ab.
-kai_volume_device: ""
+# Volume kai-data: nur Rueckfall, ein vorhandenes Label kai-data hat Vorrang.
+kai_volume_device: /dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol040ff91a9877e45cf
