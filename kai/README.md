@@ -17,7 +17,7 @@ Kai ist ein gemeinsamer KI-Chat für vier Freunde. Er besteht aus zwei gemietete
 |---|---|
 | Alle | Dieses Blatt und die Bilder in [docs/bilder/](docs/bilder/) |
 | Technisch Interessierte | [Architektur und Entscheidungen](docs/01_architektur.md) |
-| Uwe (Infrastruktur) | [Anforderungen an Maschinen, Platten, Netz, Zugang](docs/02_anforderungen-infrastruktur.md) und die [Bestandsaufnahme der Einstiegs-Maschine](docs/kai-entry_specs.md) |
+| Uwe (Infrastruktur) | [Anforderungen an Maschinen, Platten, Netz, Zugang](docs/02_anforderungen-infrastruktur.md) und die [Bestandsaufnahme der beiden Maschinen](docs/instance_specs.md) |
 | Modellwahl | [Modellvorschlag für die T4-Grafikkarte](docs/03_modellvorschlag.md) |
 | Vorgehen | [Plan: Phasen, Aufgaben, Prüfungen](docs/04_plan.md) |
 | Admins | [compose/entry/.env.example](compose/entry/.env.example): welche Zugangsdaten gebraucht werden (ab Phase 2) |

@@ -1,6 +1,6 @@
 # Kai — Plan: Phasen, Aufgaben, Prüfungen
 
-Stand: 2026-11-06 · Status: Vorschlag · Bezug: Sprint 01 in ClickUp (S1-xx), [01 Architektur](01_architektur.md)
+Stand: 2026-11-07 · Status: Vorschlag · Bezug: Sprint 01 in ClickUp (S1-xx), [01 Architektur](01_architektur.md)
 
 ## Phase 1 — Design, Architektur, Plan (dieser Branch `kai-design`)
 
@@ -9,7 +9,7 @@ Stand: 2026-11-06 · Status: Vorschlag · Bezug: Sprint 01 in ClickUp (S1-xx), [
 | Architektur mit zwei Maschinen, Austauschbarkeit, Entscheidungen | [01_architektur.md](01_architektur.md) | Entwurf |
 | Anforderungen an Instanzen, Platten, Netz, Zugang (für Uwe) | [02_anforderungen-infrastruktur.md](02_anforderungen-infrastruktur.md) | Entwurf |
 | Modellvorschlag + Alternativen für Tests | [03_modellvorschlag.md](03_modellvorschlag.md) | Entwurf |
-| Bestandsaufnahme der Einstiegs-Instanz `webui1` | [kai-entry_specs.md](kai-entry_specs.md) | erhoben 05.11. |
+| Bestandsaufnahme der Instanzen `webui1` und `kai1` | [instance_specs.md](instance_specs.md) | erhoben 07.11. |
 | Platzhalter für Geheimnisse | [../compose/entry/.env.example](../compose/entry/.env.example) | Phase 2 |
 | Bilder für Laien (SVG + PNG für ClickUp) | [bilder/](bilder/) | Entwurf |
 | Dieser Plan | 04_plan.md | Entwurf |
@@ -33,9 +33,9 @@ Steuerung: `kai-dev` und die Test-VMs liegen im selben abgeschotteten Netz; der 
 | # | Aufgabe | Prüfung |
 |---|---|---|
 | 2.0.1 | `kai-dev` aufsetzen (Briefing außerhalb des Repos); erledigt 2026-11-04 | `gh auth status`, `ansible --version`, `aws --version`; `make -C ansible syntax lint` grün |
-| 2.0.2 | System der AWS-Maschinen: alle Kai-Maschinen tragen Debian 13 (Uwe und Axel, 06.11.), beide Instanzen dasselbe offizielle Debian-Image; offen ist nur dessen Build, den Uwe nennt | Wert in [02 §1.2](02_anforderungen-infrastruktur.md); in 3.3 zeigen beide Maschinen dasselbe `/etc/os-release` und denselben Kernel wie die Test-VMs |
-| 2.0.3 | `kai-entry-pre`: cloud-init-Definition, Basis-Image, Start/Stopp mit frischem Overlay | Start → SSH als `admin` in < 30 s; `/etc/os-release` (Debian 13) und `uname -r` (`…-cloud-amd64`) wie in AWS; kein Docker; leere Platte sichtbar; Stopp lässt das Basis-Image unverändert |
-| 2.0.4 | `kai-gpu-pre`: dasselbe wie 2.0.3 mit eigener Adresse und der größeren Datenplatte | Start → SSH als `admin` in < 30 s; `/etc/os-release` und `uname -r` wie in AWS; kein Docker, kein Treiber; leere Platte sichtbar; Stopp lässt das Basis-Image unverändert |
+| 2.0.2 | System der AWS-Maschinen: alle Kai-Maschinen tragen Debian 13 (Uwe und Axel, 06.11.), beide Instanzen dasselbe offizielle Debian-Image, Build 20261103-2651; erledigt 2026-11-07 ([Bestandsaufnahme](instance_specs.md)) | Wert in [02 §1.2](02_anforderungen-infrastruktur.md); in 3.3 zeigen beide Maschinen dasselbe `/etc/os-release` und denselben Kernel wie die Test-VMs |
+| 2.0.3 | `kai-entry-pre`: cloud-init-Definition, Basis-Image, Start/Stopp mit frischem Overlay; erledigt 2026-11-07 (Bootweg BIOS, Root 20 GB und `admin` wie in der [Bestandsaufnahme](instance_specs.md)) | Start → SSH als `admin` in < 30 s; `/etc/os-release` (Debian 13) und `uname -r` (`…-cloud-amd64`) wie in AWS; kein Docker; leere Platte sichtbar; Stopp lässt das Basis-Image unverändert |
+| 2.0.4 | `kai-gpu-pre`: dasselbe wie 2.0.3 mit eigener Adresse, einer leeren Platte vor der Datenplatte anstelle des Instance Storage und der größeren Datenplatte; erledigt 2026-11-07 | Start → SSH als `admin` in < 30 s; `/etc/os-release` und `uname -r` wie in AWS; kein Docker, kein Treiber; leere Platte sichtbar; Stopp lässt das Basis-Image unverändert |
 
 Abnahme Phase 2.0: `make ping` aus `kai-dev` gegen beide Test-VMs grün.
 
@@ -92,10 +92,10 @@ Voraussetzung: Punkte aus [02 §8](02_anforderungen-infrastruktur.md) erfüllt, 
 ## Offene Punkte (Entscheidung Uwe / Team)
 
 1. Zugangsweg Nutzer: VPN-Technik oder öffentlich mit TLS ([02 §5](02_anforderungen-infrastruktur.md))
-2. `kai-entry`: `webui1` auf Debian 13, `t3.medium`, Root 30 GB, Volume `kai-data`, Tag `kai:role=entry` ([02 §1, §2](02_anforderungen-infrastruktur.md))
-3. Egress für beide Maschinen: NAT-Gateway oder öffentliche IPv4 ohne Inbound ([02 §3](02_anforderungen-infrastruktur.md))
-4. Session-Rolle um `AWS-StartSSHSession` erweitern; user-data mit SSM-Agent und Axels Key, Klartext-Passwort aus dem Terraform-Code ([02 §6](02_anforderungen-infrastruktur.md))
+2. `kai-entry` (`webui1`): `t3.medium`, Root 30 GB, Volume `kai-data`, Tag `kai:role=entry` ([02 §1, §2](02_anforderungen-infrastruktur.md))
+3. Egress: heute offen ohne Allowlist; auf die Ziele in [02 §3](02_anforderungen-infrastruktur.md) einschränken oder offen lassen
+4. Session-Rolle um `AWS-StartSSHSession` erweitern; Axels Key bei `admin` auf beiden Maschinen ([02 §6](02_anforderungen-infrastruktur.md))
 5. Private DNS-Zone `kai.internal` mit `entry` und `gpu`; Security Groups per Gruppenreferenz ([02 §4](02_anforderungen-infrastruktur.md))
-6. `kai-gpu` aus demselben Debian-Image anlegen (`g4dn.xlarge`, Root 30 GB), Volume `kai-models` 150 GB bestätigen, Build des Images nennen ([02 §1.2–§1.3, §2.2](02_anforderungen-infrastruktur.md))
+6. `kai-gpu` (`kai1`): Root 30 GB ([02 §1.7](02_anforderungen-infrastruktur.md))
 7. Budget-Grenze für Betriebsstunden von `kai-gpu` und den Dauerbetrieb von `kai-entry` (S1-03)
 8. Datenschutz-Regeln für den Prototyp festhalten (S1-04): wer ist Admin in Open WebUI, Aufbewahrung von Chats, ob und wann externe Modelle über LiteLLM freigegeben werden
