@@ -8,6 +8,12 @@ module "domain" {
 resource "aws_route53domains_domain" "this" {
   domain_name = var.publicdomain
   auto_renew  = true
+  admin_privacy = false
+  billing_privacy = false
+  registrant_privacy = false
+  tech_privacy = false
+  transfer_lock = false
+  duration_in_years = 1
 
   admin_contact {
     first_name        = "Uwe"
