@@ -1,2 +1,2 @@
 name,policy_arns,members
-unserkai_everbody,arn:aws:iam::400295622374:policy/UnserkaiUserSelfManagement,<ignored by code!! Just everybody>
+unserkai_everbody,arn:aws:iam::400295622374:policy/UnserkaiUserSelfManagement;arn:aws:iam::400295622374:policy/UnserkaiSSM;arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore,<ignored by code!! Just everybody>

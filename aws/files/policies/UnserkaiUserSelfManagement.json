@@ -90,27 +90,27 @@
             "Resource": "arn:aws:iam::*:user/${aws:username}"
         },
         {
-            "Sid": "DenyAllExceptListedIfNoMFA",
-            "Effect": "Deny",
-            "NotAction": [
-                "iam:CreateLoginProfile",
-                "iam:ChangePassword",
-                "iam:CreateVirtualMFADevice",
-                "iam:EnableMFADevice",
-                "iam:GetUser",
-                "iam:GetAccountSummary",
-                "iam:ListAccessKeys",
-                "iam:ListMFADevices",
-                "iam:ListVirtualMFADevices",
-                "iam:ResyncMFADevice",
-                "sts:GetSessionToken"
-            ],
-            "Resource": "*",
+            "Sid": "AllowStartSessionWithApprovedDocument",
+            "Effect": "Allow",
+            "Action": "ssm:StartSession",
+            "Resource": "arn:aws:ssm:eu-central-1:400295622374:document/SSM-SessionManagerRunShell"
+        },
+        {
+            "Sid": "AllowStartSessionOnTaggedEC2Instances",
+            "Effect": "Allow",
+            "Action": "ssm:StartSession",
+            "Resource": "arn:aws:ec2:eu-central-1:400295622374:instance/*",
             "Condition": {
-                "BoolIfExists": {
-                    "aws:MultiFactorAuthPresent": "false"
+                "StringEquals": {
+                    "ssm:resourceTag/SSMAccess": "UnserkaiUserSelfManagement"
                 }
             }
+        },
+        {
+            "Sid": "AllowAssumeRole",
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Resource": "arn:aws:iam::<account_id>:user/unserkai-terraform"
         }
     ]
 }

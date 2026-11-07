@@ -6,7 +6,8 @@ locals {
   # use template engine to replace some variables
   policies = {
     for file_name in toset(fileset("../files/policies", "*.json")) :
-    replace(file_name, ".json", "") => file("../files/policies/${file_name}")
+    replace(file_name, ".json", "") =>
+      replace(file("../files/policies/${file_name}"), "<account_id>", var.aws_account_id)
   }
 
   groups = [

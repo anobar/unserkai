@@ -48,15 +48,15 @@ Die genutzte Umgebungsvariable `GNUPGHOME` wird über direnv, Datei `.envrc` kon
 
 Für das Erstellen von Benutzer wird das terraform module `iam-user` benutzt.
 Um das Passwort zu extrahieren, wird hierfür der private key des PGP-Schlüssels benötigt.
-Weiterhin wird der Name der Terraform Module `iam-user` Instanz benötigt, z.B. `iam_user-user1`.
+Weiterhin wird der Name der Terraform Module `iam-user` Instanz benötigt, z.B. `iam_user-user`.
 
 Um die Arbeitsumgebung für PGP vorzubereiten, siehe [PGP Abschnitt](#pgp) oben.
 Anschließend kann das unten stehende Kommando ausgeführt werden. Der
-Beispielbenutzer `iam_user-user1` wird hierbei durch den realen Benutzer ersetzt:
+Beispielbenutzer `iam_user-user` wird hierbei durch den realen Benutzer ersetzt:
 
 ```sh
 terraform init
-terraform state show 'module.iam_user-user1.aws_iam_user_login_profile.this[0]' \
+terraform state show 'module.iam_user-user.aws_iam_user_login_profile.this[0]' \
     | awk '/encrypted_password/ {print $3}' \
     | sed -e 's/"//g' \
     | base64 -d \

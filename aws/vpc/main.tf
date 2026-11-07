@@ -7,3 +7,7 @@ module "vpc" {
   region                 = var.aws_region
   cidr                   = var.server_vpc_cidr
 }
+
+output "vpc" {
+  value = module.vpc
+}
