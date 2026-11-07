@@ -17,13 +17,15 @@ Gemeinsames Infrastruktur-Repo von Uwe, Axel, Nic und Martin: AWS-Grundlage mit 
 
 - `bootstrap/`, `aws/` — Terraform/Terragrunt für Konto, IAM, VPC, Route 53; das ist Uwes Bereich, Agenten lesen dort nur.
 - `ansible/` — Rollen `common`, `users`, `docker`, `cmake` (ungenutzt), bald `kai_entry` und `kai_gpu`; Gruppen `kai_entry`/`kai_gpu` in `ansible/inventory/hosts.yml`, Variablen in `group_vars`, in `host_vars` nur Instanz-ID, Zugang und Maschinendaten (Plan 2.10).
-- `kai/compose/` — zwei Stacks `entry/` und `gpu/` mit je einer `.env.example`; `kai/docs/` — Architektur, Anforderungen an die Instanzen, Modellwahl, Plan, Bestandsaufnahme `kai-entry_specs.md`.
+- `kai/compose/` — zwei Stacks `entry/` und `gpu/` mit je einer `.env.example`; `kai/docs/` — Architektur, Anforderungen an die Instanzen, Modellwahl, Plan, Bestandsaufnahme beider Instanzen `instance_specs.md`.
 
 ## Stolperfallen
 
 - Alle Kai-Maschinen tragen Debian 13 (offizielles Debian-Image, Benutzer `admin`, Kernel `cloud-amd64`), also sprechen die Rollen nur `apt` wie im Heim-Setup: Docker CE aus Dockers Repo, auf `kai-gpu` Treiber und Container Toolkit aus NVIDIAs CUDA-Repo mit gepinntem Zweig (`nvidia-driver-pinning-*`), und die Runtime `nvidia` kommt über `docker_daemon_config` in die `daemon.json` der Rolle `docker`, nie per `nvidia-ctk`, damit die Datei genau einen Schreiber hat (Plan 2.8, 2.9).
+- Das Debian-Image hat kein `gpg`, also legen Rollen Repo-Schlüssel als `.asc` mit `signed-by` ab, nie per `gpg --dearmor` (Bestandsaufnahme §2).
 - `kai-entry` erreicht `kai-gpu` nur über den DNS-Namen in `kai_gpu_endpoint`; nie eine IP ins Repo, in `litellm.yaml` oder eine Compose-Datei (Architektur E11).
-- Die Volumes `kai-data` (kai-entry) und `kai-models` (kai-gpu) werden per Dateisystem-Label gemountet, nie per Gerätenamen (Architektur E4).
+- Die Volumes `kai-data` (kai-entry) und `kai-models` (kai-gpu) werden per Dateisystem-Label gemountet, nie per Gerätenamen, denn auf `kai-gpu` liegt das Instance Storage vor dem Volume (`nvme1n1`), und `kai-gpu-pre` bildet das mit einer leeren Platte `vdb` vor der Datenplatte `vdc` nach (Architektur E4, Bestandsaufnahme §3).
+- Interface-Namen und MTU unterscheiden sich zwischen Instanz (`ens5`, MTU 9001, DHCP) und Test-VM (`enp1s0`, statisch), also nennt keine Rolle ein Interface beim Namen.
 - `.envrc` setzt `AWS_PROFILE=unserkai-terraform`, also läuft mit aktivem direnv jeder `aws`-Aufruf im Repo mit dem Terraform-Profil; Aufrufe für Kai (SSM) nennen ihr Profil ausdrücklich.
 - Images im Compose-Stack sind mit Tag und Digest gepinnt; ein Update ändert beides im selben Commit, `kai/bin/kai-pin-images` löst die Digests auf (braucht Registry-Zugang, den kai-dev nicht hat) und `--check` meldet ungepinnte Images.
 - Deployment-Tests laufen gegen die Inventory-Hosts `kai-entry-pre` (Gruppe `kai_entry`) und `kai-gpu-pre` (Gruppe `kai_gpu`), zwei VMs ohne GPU im Heimnetz, die je das Image ihrer AWS-Maschine tragen (`kai_gpu_enabled: false`, kleines CPU-Testmodell); eine Änderung an Rollen gilt erst als fertig, wenn die frische Test-VM zweimal durchläuft und der zweite Lauf `changed=0` meldet; private Werte der Test-VMs (Proxy, Hosts-Einträge, Adressen) stehen nur im gitignorierten Inventory-Overlay `ansible/inventory/local/` und in `~/.ssh/config` von `kai-dev`, nie in `host_vars` (Plan 2.10).
