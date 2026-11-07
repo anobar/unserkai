@@ -59,6 +59,35 @@
     path: "{{ kai_entry_install_dir }}/.env"
   register: kai_entry_env_stat
 
+# Optionale Vorlage: ein Mensch legt die fertige .env vorab auf der Maschine ab (kai_entry_env_seed).
+# Sie wird nur kopiert, wenn keine .env existiert; eine vorhandene wird nie ueberschrieben, die Vorlage bleibt liegen.
+- name: Vorlage der Umgebungsdatei pruefen
+  ansible.builtin.stat:
+    path: "{{ kai_entry_env_seed }}"
+  register: kai_entry_env_seed_stat
+  when:
+    - kai_entry_env_seed | length > 0
+    - not kai_entry_env_stat.stat.exists
+
+- name: Umgebungsdatei aus der Vorlage anlegen
+  ansible.builtin.copy:
+    src: "{{ kai_entry_env_seed }}"
+    dest: "{{ kai_entry_install_dir }}/.env"
+    remote_src: true
+    force: false
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  when:
+    - kai_entry_env_seed_stat.stat is defined
+    - kai_entry_env_seed_stat.stat.exists
+
+- name: Umgebungsdatei erneut pruefen
+  ansible.builtin.stat:
+    path: "{{ kai_entry_install_dir }}/.env"
+  register: kai_entry_env_stat
+
 - name: Umgebungsdatei vorhanden pruefen
   ansible.builtin.assert:
     that:

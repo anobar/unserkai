@@ -61,7 +61,7 @@ später daneben, alle als weitere Einträge in LiteLLM: GPU-VM B (größer) · l
 | kai-entry | `litellm` | `ghcr.io/berriai/litellm:<version>-stable` | OpenAI-kompatibler Endpunkt für Open WebUI und Harnesses; Modellliste aus allen Backends; Routing, Fallback; virtuelle Keys, Budgets, Verbrauch pro Key | 4000 auf `kai_litellm_bind` |
 | kai-entry | `litellm-db` | `docker.io/library/postgres:17` | Datenbank für Keys, Budgets und Verbrauch von LiteLLM | nur intern |
 | kai-entry | `brave-mcp` | `docker.io/mcp/brave-search` (oder `brave/brave-search-mcp-server`), Transport `http` | Websuche als MCP-Werkzeug für Open WebUI | 8000, nur intern |
-| kai-gpu | `llama-swap` | `ghcr.io/mostlygeek/llama-swap:unified-cuda13` (enthält `llama-server`) | lädt das angefragte Modell auf die GPU, entlädt bei Wechsel | 8080 auf der VPC-Adresse |
+| kai-gpu | `llama-swap` | `ghcr.io/mostlygeek/llama-swap:unified-cuda` (CUDA 12; das CUDA-13-Image hat keinen Kernel für die T4) (enthält `llama-server`) | lädt das angefragte Modell auf die GPU, entlädt bei Wechsel | 8080 auf der VPC-Adresse |
 
 Begründungen:
 
