@@ -1,16 +1,16 @@
 # Kai — Anforderungen an die Infrastruktur (für Uwe)
 
-Stand: 2026-11-06 · Status: zur Abstimmung · Bezug: [01 Architektur](01_architektur.md), [Bestandsaufnahme `webui1`](kai-entry_specs.md), Sprint-Aufgaben S1-05, S1-08, S1-11
+Stand: 2026-11-07 · Status: zur Abstimmung · Bezug: [01 Architektur](01_architektur.md), [Bestandsaufnahme der Instanzen](instance_specs.md), Sprint-Aufgaben S1-05, S1-08, S1-11
 
-Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ blockiert die Installation, „Soll“ den sauberen Betrieb, „Kann“ ist Komfort. `kai-entry` ist Uwes Instanz `webui1`, `kai-gpu` kommt dazu.
+Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ blockiert die Installation, „Soll“ den sauberen Betrieb, „Kann“ ist Komfort. `kai-entry` ist Uwes Instanz `webui1` (`i-0f6dc684ea90b09cf`), `kai-gpu` ist `kai1` (`i-0f896ee21e1ae8c72`); was davon erfüllt ist, steht in der [Bestandsaufnahme §5](instance_specs.md).
 
 ## 1. Instanzen
 
 | | Anforderung | Stufe |
 |---|---|---|
-| 1.1 | **`kai-entry`** ist `webui1`, wie von Uwe angelegt (Region `eu-central-1`, Zone `eu-central-1a`, x86_64). Gewünschte Größe `t3.medium` (2 vCPU, 4 GB RAM): die heutigen 913 MB reichen nicht für Open WebUI, LiteLLM und Postgres; Uwe hat die Vergrößerung angeboten | Muss |
-| 1.2 | **System, beide Maschinen:** Debian 13 (trixie), amd64, das offizielle Image des Debian-Projekts in AWS (Konto `136693071363`, Name `debian-13-amd64-<Build>`), Kernel-Flavour `cloud-amd64`, cloud-init (Uwe und Axel, 06.11.); die Rollen sprechen `apt` wie im Heimnetz (Entscheidung E10 in [01 §6](01_architektur.md)). Bitte den Build nennen und bei einem Wechsel Bescheid geben, damit `kai-entry-pre` und `kai-gpu-pre` das Cloud-Image desselben Builds bekommen | gesetzt |
-| 1.3 | **`kai-gpu`:** `g4dn.xlarge` (1× T4 16 GB, 4 vCPU, 16 GB RAM), dieselbe Zone wie das Volume `kai-models` | Muss |
+| 1.1 | **`kai-entry`** ist `webui1` (`i-0f6dc684ea90b09cf`), wie von Uwe angelegt (Region `eu-central-1`, Zone `eu-central-1b`, x86_64). Gewünschte Größe `t3.medium` (2 vCPU, 4 GB RAM): die heutigen 939 MB reichen nicht für Open WebUI, LiteLLM und Postgres; Uwe hat die Vergrößerung angeboten | Muss |
+| 1.2 | **System, beide Maschinen:** Debian 13 (trixie), amd64, das offizielle Image des Debian-Projekts in AWS (Konto `136693071363`, Name `debian-13-amd64-<Build>`), Kernel-Flavour `cloud-amd64`, cloud-init (Uwe und Axel, 06.11.); die Rollen sprechen `apt` wie im Heimnetz (Entscheidung E10 in [01 §6](01_architektur.md)). Beide Instanzen laufen auf Build 20261103-2651 (`ami-04e9b382a9b6299a6`, [Bestandsaufnahme §2](instance_specs.md)); bei einem Wechsel bitte Bescheid geben, damit `kai-entry-pre` und `kai-gpu-pre` das Cloud-Image desselben Builds bekommen | gesetzt |
+| 1.3 | **`kai-gpu`** ist `kai1` (`i-0f896ee21e1ae8c72`): `g4dn.xlarge` (1× T4 16 GB, 4 vCPU, 16 GB RAM), dieselbe Zone wie das Volume `kai-models` | Muss |
 | 1.4 | **Treiber `kai-gpu`:** keiner im Image; die Rolle `kai_gpu` installiert ihn wie auf Axels GPU-Rechner aus NVIDIAs CUDA-Repo für Debian 13 (`cuda-keyring`, Header `linux-headers-cloud-amd64` zum laufenden Kernel, `nvidia-driver-cuda` mit dem Open-Kernel-Modul `nvidia-kernel-open-dkms`, `nvidia-container-toolkit` aus demselben Repo) im Zweig 620, dem Long Term Support Branch bis 09/2029, festgehalten mit `nvidia-driver-pinning-620`; Debians eigener Treiber (550) ist für das `cuda13`-Image von llama-swap zu alt (braucht ≥ 580). Für Uwe nichts zu tun | gesetzt |
 | 1.5 | Standard-Benutzer `admin` mit sudo ohne Passwort auf beiden Maschinen (Standard des Debian-Images), erreichbar für Ansible (siehe §6) | Muss |
 | 1.6 | Tags `Name=kai-entry` bzw. `Name=kai-gpu` und `kai:role=entry` bzw. `kai:role=gpu` (für ein späteres dynamisches Inventar) | Soll |
@@ -30,7 +30,7 @@ Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ bl
 
 ## 3. Netz, ausgehend
 
-**Befund:** `webui1` hat heute keinen Weg ins Internet (Paketquellen und `curl` laufen in den Timeout). Ohne Egress gibt es weder Updates noch `docker pull`, Modell-Download oder die Brave-API. SSM funktioniert, die SSM-Endpunkte sind also erreichbar.
+**Befund vom 07.11.:** Beide Maschinen erreichen das Internet ohne öffentliche IPv4 und ohne erkennbare Allowlist ([Bestandsaufnahme §4](instance_specs.md)); offen ist nur noch die Einschränkung auf die Ziele unten.
 
 | | Anforderung | Stufe |
 |---|---|---|
@@ -39,7 +39,7 @@ Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ bl
 | Ziel | Zweck | Maschine |
 |---|---|---|
 | `ghcr.io`, `pkg-containers.githubusercontent.com`, `registry-1.docker.io`, `auth.docker.io`, `production.cloudflare.docker.com` | Container-Images | beide |
-| Debian-Spiegel `deb.debian.org`, `security.debian.org` (CDN) oder ein Spiegel, den Uwe festlegt | Updates, Pakete, Kernel-Header | beide |
+| Debian-Spiegel `cdn-aws.deb.debian.org` (im Image eingestellt), dazu `deb.debian.org`, `security.debian.org` | Updates, Pakete, Kernel-Header | beide |
 | `download.docker.com` | Docker CE und Compose-Plugin (Dockers apt-Repo) | beide |
 | S3-Bucket `amazon-ssm-eu-central-1` (ohne NAT über einen S3-Gateway-Endpunkt erreichbar) | SSM-Agent-Paket, einmalig per user-data (§6.1) | beide |
 | `github.com` | Repo-Checkout für die Administration | kai-entry |
@@ -74,15 +74,15 @@ Offen (Uwe legt fest): VPN-Technik, Domain `unserkai.de` ja/nein, interner DNS-N
 
 ## 6. Admin-Zugang (Axel, Ansible, Claude Code)
 
-**Befund vom 05.11.:** Die Rolle `ssm-session-access-axel` erlaubt heute `ec2:DescribeInstances`, `Start`/`StopInstances`, `ssm:DescribeInstanceInformation` und `ssm:StartSession` mit dem Standard-Shell-Dokument; das reicht für eine Shell, aber nicht für Ansible. Auf `webui1` liegt kein SSH-Schlüssel, und die user-data enthält ein Klartext-Passwort; sie wird nach §6.1 und §6.3 neu geschrieben.
+**Befund vom 07.11.:** Die Rolle `ssm-session-access-axel` erlaubt `ec2:DescribeInstances`, `Start`/`StopInstances` für beide Instanzen, `ssm:DescribeInstanceInformation` und `ssm:StartSession` mit dem Standard-Shell-Dokument; das reicht für eine Shell, aber nicht für Ansible, denn `AWS-StartSSHSession` ist verwehrt. Die user-data beider Maschinen installiert den SSM-Agent und enthält kein Passwort; bei `admin` liegt nur das EC2-Schlüsselpaar, nicht Axels Schlüssel ([Bestandsaufnahme §4](instance_specs.md)).
 
 | | Anforderung | Stufe |
 |---|---|---|
 | 6.1 | **SSM Session Manager** auf beiden Instanzen. Debians Image bringt den SSM-Agent nicht mit (AWS-Doku „Manually installing SSM Agent on Debian Server instances“); die user-data installiert ihn beim ersten Start aus dem regionalen Paket (`https://s3.eu-central-1.amazonaws.com/amazon-ssm-eu-central-1/latest/debian_amd64/amazon-ssm-agent.deb`, `dpkg -i`). Instanzrolle mit `AmazonSSMManagedInstanceCore` | Muss |
 | 6.2 | Session-Rolle für Axel zusätzlich: `ssm:StartSession` auf das Dokument `AWS-StartSSHSession` (für beide Instanzen), `ssm:TerminateSession`, `ssm:DescribeSessions`. Damit funktionieren Ansible (SSH über SSM-ProxyCommand), VSCode Remote-SSH und Claude Code auf `kai-entry` | Muss |
-| 6.3 | Axels SSH-Public-Key (`ansible/files/ssh_keys/axel.pub`, schon im Repo) in `authorized_keys` des Benutzers `admin`, per user-data als `#cloud-config` mit `ssh_authorized_keys` beim ersten Start (cloud-init ist im Image); dieselbe user-data installiert den SSM-Agent (§6.1). Danach pflegt die Rolle `users` die Schlüssel. Das Klartext-Passwort kommt aus dem Terraform-Code | Muss (einmalig) |
+| 6.3 | Axels SSH-Public-Key (`ansible/files/ssh_keys/axel.pub`, schon im Repo) in `authorized_keys` des Benutzers `admin`, per user-data als `#cloud-config` mit `ssh_authorized_keys` beim ersten Start (cloud-init ist im Image); dieselbe user-data installiert den SSM-Agent (§6.1). Danach pflegt die Rolle `users` die Schlüssel | Muss (einmalig) |
 | 6.4 | AWS-CLI-Profil für Axel mit den Rechten aus 6.2 (MFA-geschützt; eingerichtet und geprüft am 05.11.) | Muss |
-| 6.5 | Start/Stop beider Instanzen durch Axel (heute für `webui1` vorhanden, für `kai-gpu` nachziehen): spart Abstimmungsrunden bei Installation, Tests und im Betrieb von `kai-gpu` | Muss |
+| 6.5 | Start/Stop beider Instanzen durch Axel (vorhanden, geprüft am 07.11.): spart Abstimmungsrunden bei Installation, Tests und im Betrieb von `kai-gpu` | Muss |
 | 6.6 | Snapshot-Recht für Axel: `ec2:CreateSnapshot`, `ec2:DescribeSnapshots`, `ec2:DescribeVolumes` auf die beiden Volumes (S1-11), oder Uwe macht Snapshots auf Zuruf | Kann |
 | 6.7 | Lese-Rechte zum Prüfen der Umgebung: `ec2:DescribeImages`, `ec2:DescribeSecurityGroups`, `ec2:DescribeSubnets` | Kann |
 
@@ -101,8 +101,10 @@ Was Axel dann auf `kai-entry` installiert (nativ, nicht Container): Claude Code 
 
 ## 8. Was Axel von Uwe braucht, bevor es losgeht
 
-1. `kai-entry`: `webui1` auf Debian 13 (§1.2), `t3.medium`, Root 30 GB, Volume `kai-data` angehängt, Egress nach §3, user-data mit SSM-Agent und Axels Key bei `admin` (§6.1, §6.3)
-2. `kai-gpu`: Instanz nach §1.3 aus demselben Image, Root 30 GB, Volume `kai-models`, Egress, dieselbe user-data
-3. Instanz-IDs beider Maschinen, private DNS-Namen (§4.1, §4.4), Build des Images (§1.2)
+Erfüllt ist, was die [Bestandsaufnahme §5](instance_specs.md) so ausweist; offen bleibt:
+
+1. `kai-entry` (`webui1`): `t3.medium`, Root 30 GB, Volume `kai-data` angehängt, Axels Key bei `admin` (§1.1, §1.7, §2.1, §6.3)
+2. `kai-gpu` (`kai1`): Root 30 GB, Axels Key bei `admin` (§1.7, §6.3)
+3. Private DNS-Namen (§4.1, §4.4)
 4. Session-Rolle mit `AWS-StartSSHSession` (§6.2); Prüfung: `ssh` über den SSM-ProxyCommand liefert eine Shell als `admin`
 5. Entscheidung zu §5 (VPN/öffentlich), damit `kai_webui_bind` und `kai_litellm_bind` gesetzt werden können; kann auch nach der Installation geändert werden
