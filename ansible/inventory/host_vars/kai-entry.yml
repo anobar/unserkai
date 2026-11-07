@@ -1,0 +1,10 @@
+---
+# kai-entry in AWS: Zugang ueber SSM Session Manager (Phase 3).
+# Instanz-ID und Profil traegt Uwe nach dem Anlegen der Instanz ein.
+kai_instance_id: ""
+ansible_user: admin
+ansible_ssh_common_args: >-
+  -o StrictHostKeyChecking=accept-new
+  -o ProxyCommand="aws ssm start-session --target {{ kai_instance_id }}
+  --region {{ kai_aws_region }} --profile {{ kai_aws_profile }}
+  --document-name AWS-StartSSHSession --parameters portNumber=%p"

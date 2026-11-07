@@ -1,0 +1,3 @@
+---
+# Test-VM im Heimnetz mit dem Image von kai-entry; Adresse und Proxy stehen im Overlay inventory/local/.
+ansible_user: admin

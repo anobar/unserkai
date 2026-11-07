@@ -10,13 +10,13 @@ Gemeinsames Infrastruktur-Repo von Uwe, Axel, Nic und Martin: AWS-Grundlage mit 
 
 - `make -C ansible syntax` — Syntaxcheck ohne Verbindung; `make -C ansible lint` — ansible-lint mit Profil `basic` aus `ansible/.ansible-lint`.
 - `make -C ansible ping|check|deploy [TAGS=a,b] [LIMIT=host]` — Verbindungstest, Dry-Run mit Diff, Anwenden.
-- `./check [--only <Schritt>]` ist das eine Prüf-Gate (ansible-lint, yamllint, shellcheck, `docker compose config`, gitleaks, Scan auf private Adressen) und läuft vor jedem Commit über `.githooks/pre-commit`; Ausnahmen für den Adress-Scan stehen in `.check-allow-private-addresses`.
+- `./check [--only <Schritt>]` ist das eine Prüf-Gate (ansible-lint, yamllint, shellcheck, `docker compose config`, gitleaks, Scan auf private Adressen) und läuft vor jedem Commit über `.githooks/pre-commit`; Ausnahmen für den Adress-Scan stünden in `.check-allow-private-addresses` (heute keine).
 - In kai-dev bricht Ansible ohne `LC_ALL=C.UTF-8` mit „unsupported locale setting“ ab; `./check` setzt es selbst, für `make -C ansible` setzt du es von Hand.
 
 ## Bereiche
 
 - `bootstrap/`, `aws/` — Terraform/Terragrunt für Konto, IAM, VPC, Route 53; das ist Uwes Bereich, Agenten lesen dort nur.
-- `ansible/` — Rollen `common`, `users`, `docker`, `cmake`, bald `kai_entry` und `kai_gpu`; Gruppen `kai_entry`/`kai_gpu` in `ansible/inventory/hosts.yml`, Variablen in `group_vars`, in `host_vars` nur Instanz-ID, Zugang und Maschinendaten (Plan 2.10).
+- `ansible/` — Rollen `common`, `users`, `docker`, `cmake` (ungenutzt), bald `kai_entry` und `kai_gpu`; Gruppen `kai_entry`/`kai_gpu` in `ansible/inventory/hosts.yml`, Variablen in `group_vars`, in `host_vars` nur Instanz-ID, Zugang und Maschinendaten (Plan 2.10).
 - `kai/compose/` — zwei Stacks `entry/` und `gpu/` mit je einer `.env.example`; `kai/docs/` — Architektur, Anforderungen an die Instanzen, Modellwahl, Plan, Bestandsaufnahme `kai-entry_specs.md`.
 
 ## Stolperfallen

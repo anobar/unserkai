@@ -1,0 +1,15 @@
+---
+# kai-gpu in AWS (g4dn.xlarge, NVIDIA T4): Zugang ueber SSM Session Manager (Phase 3).
+kai_instance_id: ""
+ansible_user: admin
+ansible_ssh_common_args: >-
+  -o StrictHostKeyChecking=accept-new
+  -o ProxyCommand="aws ssm start-session --target {{ kai_instance_id }}
+  --region {{ kai_aws_region }} --profile {{ kai_aws_profile }}
+  --document-name AWS-StartSSHSession --parameters portNumber=%p"
+
+# Maschinendaten (kai/docs/03_modellvorschlag.md)
+kai_gpu_vram_gb: 16
+kai_gpu_models:
+  - name: gpt-oss-20b
+    ctx_size: 32768

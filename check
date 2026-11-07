@@ -65,7 +65,7 @@ step_compose() {
   local -a files=()
   mapfile -d '' -t files < <(git ls-files -z -- 'kai/compose/*/compose.yaml')
   if [[ ${#files[@]} -eq 0 ]]; then
-    return 2
+    return 77
   fi
   local failed=0
   for f in "${files[@]}"; do
@@ -115,7 +115,7 @@ run_step() {
   0)
     echo "[PASS] $name"
     ;;
-  2)
+  77)
     echo "[SKIP] $name (nothing to check)"
     ;;
   *)

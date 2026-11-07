@@ -5,8 +5,53 @@
 common_timezone: Europe/Berlin
 
 # Verzeichnis mit den oeffentlichen SSH-Keys der verwalteten Benutzer.
-# Die Keys werden in host_vars/<hostname>.yml referenziert.
+# Die Keys werden unten bei den Benutzern referenziert.
 users_ssh_keys_dir: "{{ playbook_dir }}/../files/ssh_keys"
 
 # Beim ersten Kontakt neuen SSH-Hostkey akzeptieren, danach festhalten.
 ansible_ssh_common_args: "-o StrictHostKeyChecking=accept-new"
+
+# Zugang zu den Kai-Instanzen ueber SSM (Phase 3); Profil traegt Uwe nach.
+kai_aws_region: eu-central-1
+kai_aws_profile: ""
+
+# Optional: Passwort-Hash pro Benutzer (z. B. via "mkpasswd -m sha-512").
+# Ohne Passwort sind die Konten passwortgesperrt; der Login erfolgt per SSH-Key.
+users_managed:
+  - name: uwe
+    comment: "Uwe Bartels"
+    sudo: true
+    # Die Keys werden aus ansible/files/ssh_keys/<name>.pub gelesen.
+    # Fehlt die Datei, wird der Benutzer ohne Key angelegt.
+    ssh_authorized_keys: >-
+      {{ lookup('ansible.builtin.file', users_ssh_keys_dir ~ '/uwe.pub', errors='ignore') | default('', true)
+         | split('\n') | map('trim') | select('match', '^(ssh-|ecdsa-)') | list }}
+  - name: axel
+    comment: "Axel"
+    sudo: true
+    ssh_authorized_keys: >-
+      {{ lookup('ansible.builtin.file', users_ssh_keys_dir ~ '/axel.pub', errors='ignore') | default('', true)
+         | split('\n') | map('trim') | select('match', '^(ssh-|ecdsa-)') | list }}
+  - name: nic
+    comment: "Nic"
+    sudo: true
+    ssh_authorized_keys: >-
+      {{ lookup('ansible.builtin.file', users_ssh_keys_dir ~ '/nic.pub', errors='ignore') | default('', true)
+         | split('\n') | map('trim') | select('match', '^(ssh-|ecdsa-)') | list }}
+  # - name: martin
+  #   comment: "Martin"
+  #   sudo: true
+  #   ssh_authorized_keys: >-
+  #     {{ lookup('ansible.builtin.file', users_ssh_keys_dir ~ '/martin.pub', errors='ignore') | default('', true)
+  #        | split('\n') | map('trim') | select('match', '^(ssh-|ecdsa-)') | list }}
+
+# Ohne Passwort-Hash ist sudo sonst nicht nutzbar. Bei produktiven Maschinen
+# besser Passwort-Hashes hinterlegen und diesen Wert auf false setzen.
+users_passwordless_sudo: true
+
+# Diese Benutzer werden zusaetzlich in die Gruppe "docker" aufgenommen.
+docker_users:
+  - uwe
+  - axel
+  - nic
+  # - martin
