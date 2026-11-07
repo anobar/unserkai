@@ -28,10 +28,10 @@
       ansible.builtin.apt:
         deb: /var/tmp/cuda-keyring_1.1-1_all.deb
 
+    # Ohne cache_valid_time: ein frischer Cache kennt das gerade eingetragene CUDA-Repo noch nicht.
     - name: Apt-Cache aktualisieren
       ansible.builtin.apt:
         update_cache: true
-        cache_valid_time: 3600
 
     - name: Kernel-Header installieren
       ansible.builtin.apt:
