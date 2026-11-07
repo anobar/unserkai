@@ -1,0 +1,5 @@
+# Zusatzdatei fuer Maschinen ohne GPU (kai_gpu_enabled: false):
+#   docker compose -f compose.yaml -f compose.cpu.yaml up -d
+services:
+  llama-swap:
+    deploy: !reset null

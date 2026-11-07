@@ -67,7 +67,8 @@ step_compose() {
   if [[ ${#files[@]} -eq 0 ]]; then
     return 77
   fi
-  local failed=0
+  local failed=0 tmp
+  tmp="$(mktemp -d)"
   for f in "${files[@]}"; do
     local dir
     dir="$(dirname "$f")"
@@ -76,8 +77,17 @@ step_compose() {
       failed=1
       continue
     fi
-    docker compose --env-file "$dir/.env.example" -f "$f" config -q || failed=1
+    # env_file: .env verlangt eine .env; die Pruefung nimmt dafuer .env.example.
+    rm -rf "${tmp:?}/stack"
+    mkdir "$tmp/stack"
+    cp "$dir"/* "$dir/.env.example" "$tmp/stack/" 2>/dev/null || true
+    cp "$dir/.env.example" "$tmp/stack/.env"
+    docker compose --project-directory "$tmp/stack" --env-file "$tmp/stack/.env" -f "$tmp/stack/compose.yaml" config -q || failed=1
+    if [[ -f "$dir/compose.cpu.yaml" ]]; then
+      docker compose --project-directory "$tmp/stack" --env-file "$tmp/stack/.env" -f "$tmp/stack/compose.yaml" -f "$tmp/stack/compose.cpu.yaml" config -q || failed=1
+    fi
   done
+  rm -rf "$tmp"
   return "$failed"
 }
 

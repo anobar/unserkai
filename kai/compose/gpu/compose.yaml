@@ -1,0 +1,31 @@
+# Kai GPU-Stack (kai-gpu): llama-swap mit llama.cpp.
+# Ohne GPU (Test-VM) kommt zusaetzlich compose.cpu.yaml dazu, das die Reservierung entfernt;
+# Image wird mit kai/bin/kai-pin-images auf Tag + Digest gepinnt.
+name: kai-gpu
+
+services:
+  llama-swap:
+    image: ghcr.io/mostlygeek/llama-swap:unified-cuda13
+    restart: unless-stopped
+    env_file:
+      - path: ./proxy.env
+        required: false
+    command: ["-config", "/app/config.yaml", "-listen", ":8080"]
+    ports:
+      - "${KAI_GPU_BIND:-127.0.0.1}:${KAI_GPU_PORT:-8080}:8080"
+    volumes:
+      - ./llama-swap.yaml:/app/config.yaml:ro
+      - ${KAI_MODELS_DIR:-/opt/kai/models}:/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s

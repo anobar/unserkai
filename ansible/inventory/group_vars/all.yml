@@ -14,6 +14,8 @@ ansible_ssh_common_args: "-o StrictHostKeyChecking=accept-new"
 # Egress-Proxy der Test-VMs; in AWS leer. Die Werte der Test-VMs stehen im Overlay inventory/local/.
 kai_http_proxy: ""
 kai_no_proxy: "localhost,127.0.0.1,.kai.internal"
+# Zusaetzlich fuer Container: die Dienstnamen im Compose-Netz.
+kai_container_no_proxy: "litellm,litellm-db,brave-mcp,open-webui,llama-swap"
 
 # Zugang zu den Kai-Instanzen ueber SSM (Phase 3); Profil traegt Uwe nach.
 kai_aws_region: eu-central-1

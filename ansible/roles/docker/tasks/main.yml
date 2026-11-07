@@ -109,7 +109,7 @@
     content: |
       HTTP_PROXY={{ kai_http_proxy }}
       HTTPS_PROXY={{ kai_http_proxy }}
-      NO_PROXY={{ kai_no_proxy }}
+      NO_PROXY={{ kai_no_proxy }},{{ kai_container_no_proxy }}
     dest: /opt/kai/proxy.env
     owner: root
     group: root

@@ -57,7 +57,7 @@ terraform.rc
 # planout
 
 # Kai: Geheimnisse nur auf der Maschine (kai/docs/01_architektur.md)
-kai/compose/.env
+kai/compose/*/.env
 
 # Kai: private test VM inventory overlay (addresses, proxy), never committed
 ansible/inventory/local/
