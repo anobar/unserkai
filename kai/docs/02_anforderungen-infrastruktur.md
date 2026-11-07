@@ -44,7 +44,6 @@ Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ bl
 | S3-Bucket `amazon-ssm-eu-central-1` (ohne NAT über einen S3-Gateway-Endpunkt erreichbar) | SSM-Agent-Paket, einmalig per user-data (§6.1) | beide |
 | `github.com` | Repo-Checkout für die Administration | kai-entry |
 | `api.search.brave.com` | Websuche (MCP) | kai-entry |
-| `api.anthropic.com`, `claude.ai`, `downloads.claude.ai` | Claude Code auf der Maschine (Login, apt-Repo) | kai-entry |
 | `api.openai.com`, `api.anthropic.com` | externe Modelle über LiteLLM, erst nach Beschluss des Teams | kai-entry, später |
 | `huggingface.co`, `*.hf.co` (CDN) | Modell-Download (einmalig pro Modell, 10–15 GB) | kai-gpu |
 | `developer.download.nvidia.com` | NVIDIA-Treiber und Container Toolkit (CUDA-Repo für Debian 13) | kai-gpu |
@@ -72,21 +71,20 @@ Alles andere kann ausgehend geblockt werden.
 
 Offen (Uwe legt fest): VPN-Technik, Domain `unserkai.de` ja/nein, interner DNS-Name.
 
-## 6. Admin-Zugang (Axel, Ansible, Claude Code)
+## 6. Admin-Zugang (Axel, Ansible)
 
 **Befund vom 07.11.:** Die Rolle `ssm-session-access-axel` erlaubt `ec2:DescribeInstances`, `Start`/`StopInstances` für beide Instanzen, `ssm:DescribeInstanceInformation` und `ssm:StartSession` mit dem Standard-Shell-Dokument; das reicht für eine Shell, aber nicht für Ansible, denn `AWS-StartSSHSession` ist verwehrt. Die user-data beider Maschinen installiert den SSM-Agent und enthält kein Passwort; bei `admin` liegt nur das EC2-Schlüsselpaar, nicht Axels Schlüssel ([Bestandsaufnahme §4](instance_specs.md)).
 
 | | Anforderung | Stufe |
 |---|---|---|
 | 6.1 | **SSM Session Manager** auf beiden Instanzen. Debians Image bringt den SSM-Agent nicht mit (AWS-Doku „Manually installing SSM Agent on Debian Server instances“); die user-data installiert ihn beim ersten Start aus dem regionalen Paket (`https://s3.eu-central-1.amazonaws.com/amazon-ssm-eu-central-1/latest/debian_amd64/amazon-ssm-agent.deb`, `dpkg -i`). Instanzrolle mit `AmazonSSMManagedInstanceCore` | Muss |
-| 6.2 | Session-Rolle für Axel zusätzlich: `ssm:StartSession` auf das Dokument `AWS-StartSSHSession` (für beide Instanzen), `ssm:TerminateSession`, `ssm:DescribeSessions`. Damit funktionieren Ansible (SSH über SSM-ProxyCommand), VSCode Remote-SSH und Claude Code auf `kai-entry` | Muss |
+| 6.2 | Session-Rolle für Axel zusätzlich: `ssm:StartSession` auf das Dokument `AWS-StartSSHSession` (für beide Instanzen), `ssm:TerminateSession`, `ssm:DescribeSessions`. Damit funktioniert Ansible (SSH über SSM-ProxyCommand) von `kai-dev` aus | Muss |
 | 6.3 | Axels SSH-Public-Key (`ansible/files/ssh_keys/axel.pub`, schon im Repo) in `authorized_keys` des Benutzers `admin`, per user-data als `#cloud-config` mit `ssh_authorized_keys` beim ersten Start (cloud-init ist im Image); dieselbe user-data installiert den SSM-Agent (§6.1). Danach pflegt die Rolle `users` die Schlüssel | Muss (einmalig) |
 | 6.4 | AWS-CLI-Profil für Axel mit den Rechten aus 6.2 (MFA-geschützt; eingerichtet und geprüft am 05.11.) | Muss |
 | 6.5 | Start/Stop beider Instanzen durch Axel (vorhanden, geprüft am 07.11.): spart Abstimmungsrunden bei Installation, Tests und im Betrieb von `kai-gpu` | Muss |
 | 6.6 | Snapshot-Recht für Axel: `ec2:CreateSnapshot`, `ec2:DescribeSnapshots`, `ec2:DescribeVolumes` auf die beiden Volumes (S1-11), oder Uwe macht Snapshots auf Zuruf | Kann |
 | 6.7 | Lese-Rechte zum Prüfen der Umgebung: `ec2:DescribeImages`, `ec2:DescribeSecurityGroups`, `ec2:DescribeSubnets` | Kann |
 
-Was Axel dann auf `kai-entry` installiert (nativ, nicht Container): Claude Code aus Anthropics apt-Repo und `git`, wie im Heimnetz. Login mit Axels Anthropic-Abo; kein API-Key auf der Maschine nötig.
 
 ## 7. Betrieb und Kosten
 

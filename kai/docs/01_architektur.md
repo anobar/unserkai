@@ -75,7 +75,7 @@ Begründungen:
 - **kai-entry:** alle Container hängen in einem Compose-Netz `kai`. Host-Ports: `open-webui` auf `kai_webui_bind:3000` für die Nutzer, `litellm` auf `kai_litellm_bind:4000` für Harnesses. Beide Adressen sind die VPN-seitige Adresse der Maschine oder `127.0.0.1`, je nach Zugangsweg. `brave-mcp` und `litellm-db` sind nur aus dem Docker-Netz erreichbar.
 - **kai-gpu:** `llama-swap` veröffentlicht 8080 auf der VPC-Adresse, weil `kai-entry` es erreichen muss. llama-swap hat keine Authentifizierung, deshalb lässt die Security Group 8080 nur aus der Security Group von `kai-entry` zu, nie aus dem VPN und nie öffentlich. Die Verwaltungsendpunkte von llama-swap (`/running`, `/unload`, `/logs`, Web-UI) bleiben damit intern; für Admin-Blicke: SSM-Portweiterleitung.
 - **Adressierung:** `kai-entry` erreicht `kai-gpu` ausschließlich über den DNS-Namen in der Ansible-Variable `kai_gpu_endpoint` (Vorschlag `http://gpu.kai.internal:8080`, private Route-53-Zone von Uwe). Keine IP-Adresse im Repo, in `litellm.yaml` oder in einer Compose-Datei. Siehe §3.
-- **Ausgehend:** Image-Registries, Hugging Face (nur `kai-gpu`), api.search.brave.com (nur `kai-entry`), Debian-Spiegel, Dockers apt-Repo, NVIDIAs CUDA-Repo (Treiber und Toolkit, nur `kai-gpu`), Anthropic (Claude Code, nur `kai-entry`). Liste in [02 §3](02_anforderungen-infrastruktur.md). Beide Instanzen haben heute Egress ohne Allowlist ([Bestandsaufnahme §4](instance_specs.md)).
+- **Ausgehend:** Image-Registries, Hugging Face (nur `kai-gpu`), api.search.brave.com (nur `kai-entry`), Debian-Spiegel, Dockers apt-Repo, NVIDIAs CUDA-Repo (Treiber und Toolkit, nur `kai-gpu`). Liste in [02 §3](02_anforderungen-infrastruktur.md). Beide Instanzen haben heute Egress ohne Allowlist ([Bestandsaufnahme §4](instance_specs.md)).
 
 ### Daten und Persistenz
 
@@ -142,7 +142,6 @@ Rund 30 Minuten, überwiegend Wartezeit. Das Risiko sitzt im Treiber: ein neuer 
 - **Updates:** Images sind auf Versionen gepinnt; ein Update ist eine Änderung im Git + `make deploy`. Keine `latest`-Tags.
 - **Snapshots:** `kai-data` vor der Erstinstallation und an Meilensteinen (S1-11). Eine Wiederherstellung ist „Volume aus Snapshot + `make deploy`“.
 - **Logs:** `docker compose logs` je Maschine; llama-swap zeigt Modellwechsel und Lade-Dauer, LiteLLM den Verbrauch pro Key. Keine zentrale Log-Sammlung im Durchstich.
-- **Administration über Claude Code:** Claude Code (Paket `claude-code` aus Anthropics apt-Repo, wie im Heimnetz) wird nativ auf `kai-entry` installiert (nicht im Container), Login mit Axels Abo. Steuerung aus VSCode: Remote-SSH über SSM-ProxyCommand (`aws ssm start-session --document-name AWS-StartSSHSession`), darin die Claude-Code-Extension. `kai-gpu` wird nur über Ansible und SSM-Shell verwaltet. Voraussetzungen stehen in [02 §6](02_anforderungen-infrastruktur.md).
 
 ## 5. Ausblick: was der Endpunkt später aufnimmt
 
