@@ -7,6 +7,8 @@ model_list:
       model: openai/{{ m.name }}
       api_base: {{ kai_gpu_endpoint }}/v1
       api_key: none
+      timeout: {{ kai_litellm_request_timeout }}
+      stream_timeout: {{ kai_litellm_request_timeout }}
 {% endfor %}
 
 general_settings:
@@ -15,4 +17,6 @@ general_settings:
 
 litellm_settings:
   drop_params: true
-  request_timeout: 600
+  request_timeout: {{ kai_litellm_request_timeout }}
+  # Keine Wiederholungen: bei gestoppter kai-gpu soll die Fehlermeldung nach einem Timeout kommen, nicht nach drei.
+  num_retries: 0

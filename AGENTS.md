@@ -17,7 +17,7 @@ Gemeinsames Infrastruktur-Repo von Uwe, Axel, Nic und Martin: AWS-Grundlage mit 
 
 - `bootstrap/`, `aws/` — Terraform/Terragrunt für Konto, IAM, VPC, Route 53; das ist Uwes Bereich, Agenten lesen dort nur.
 - `ansible/` — Rollen `common`, `users`, `docker`, `kai_volume`, `kai_entry`, `kai_gpu`, `cmake` (ungenutzt); Gruppen `kai_entry`/`kai_gpu` in `ansible/inventory/hosts.yml`, Variablen in `group_vars`, in `host_vars` nur Instanz-ID, Zugang und Maschinendaten (Plan 2.10).
-- `kai/bin/` — `kai-pin-images` (Digests), `kai-models-pull` (Modelle laden), `kai-smoke` (Rauchtest nach dem Deploy), `kai-bootstrap` (Ersteinrichtung von Open WebUI und LiteLLM über deren APIs; Geheimnisse nur in `.env` und `accounts.txt`, beide 0600).
+- `kai/bin/` — `kai-pin-images` (Digests), `kai-models-pull` (Modelle laden), `kai-smoke` (Rauchtest nach dem Deploy), `kai-gpu` (kai-gpu per AWS-CLI starten, stoppen, abfragen; Profil immer ausdrücklich), `kai-bootstrap` (Ersteinrichtung von Open WebUI und LiteLLM über deren APIs; Geheimnisse nur in `.env` und `accounts.txt`, beide 0600).
 - `kai/compose/` — zwei Stacks `entry/` und `gpu/` mit je einer `.env.example`, die Konfigurationen `litellm.yaml.j2` und `llama-swap.yaml.j2` werden aus `kai_gpu_models` gerendert (`./check --only templates`); `kai/docs/` — Architektur, Anforderungen an die Instanzen, Modellwahl, Plan, Bestandsaufnahme beider Instanzen `instance_specs.md`.
 
 ## Stolperfallen

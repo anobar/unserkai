@@ -13,3 +13,6 @@ kai_litellm_port: 4000
 # Datenvolume: per Label eingebunden, nie per Geraetename (Architektur E4).
 kai_volume_label: kai-data
 kai_volume_mountpoint: /opt/kai
+# Sekunden, die LiteLLM auf kai-gpu wartet (Verbindungsaufbau und je Antwortstueck). Muss das Laden
+# eines Modells von EBS abdecken (bis ~120 s); bei gestoppter kai-gpu kommt der Fehler nach dieser Zeit.
+kai_litellm_request_timeout: 180
