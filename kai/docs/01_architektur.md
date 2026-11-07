@@ -1,10 +1,10 @@
 # Kai — Architektur und Design (zwei Maschinen)
 
-Stand: 2026-11-06 · Status: Entwurf zur Abstimmung · Autor: Axel (mit Claude Code)
+Stand: 2026-11-07 · Status: Entwurf zur Abstimmung · Autor: Axel (mit Claude Code)
 
 Dieses Dokument beschreibt, **was** auf den Kai-Maschinen läuft, **warum** es so gebaut wird und **wie** die Teile zusammenhängen. Es ist die Grundlage für die Skripte (Phase 2) und die Umsetzung (Phase 3). Für Nicht-Techniker gibt es die Bilder in [bilder/](bilder/) und die Kurzfassung in der [README](../README.md).
 
-Verwandt: [02 Anforderungen an die Infrastruktur](02_anforderungen-infrastruktur.md) · [03 Modellvorschlag](03_modellvorschlag.md) · [04 Plan](04_plan.md) · [Bestandsaufnahme der Einstiegs-Instanz](kai-entry_specs.md)
+Verwandt: [02 Anforderungen an die Infrastruktur](02_anforderungen-infrastruktur.md) · [03 Modellvorschlag](03_modellvorschlag.md) · [04 Plan](04_plan.md) · [Bestandsaufnahme der Instanzen](instance_specs.md)
 
 ---
 
@@ -13,7 +13,7 @@ Verwandt: [02 Anforderungen an die Infrastruktur](02_anforderungen-infrastruktur
 - **Ziel des ersten Durchstichs:** Ein Chat für vier Personen (Uwe, Axel, Nic, Martin) mit einem lokal laufenden Sprachmodell auf einer gemieteten GPU-Maschine in AWS, nutzbar vom PC und Telefon. Dazu Websuche als erstes Werkzeug (Brave) und ein Endpunkt, an dem später Harnesses wie OpenCode, OpenClaw oder OpenWork andocken.
 - **Nicht-Ziele des Durchstichs:** Messenger-Anbindung, automatisches Hoch- und Runterfahren der GPU-Maschine, Hochverfügbarkeit, Einbindung privater Hardware (lezki), externe KI-Dienste mit Pseudonymisierung. Für all das ist der Platz vorgesehen (§5), gebaut wird es später.
 - **Vorbild:** Axels Heim-Setup (`lezki` = GPU-Rechenknoten mit llama.cpp hinter llama-swap, `mcps` = Open WebUI als Frontend). Übertragen auf AWS: zwei Maschinen mit genau dieser Rollenteilung, alles in **Docker-Containern**, Verteilung über **Ansible** (Konvention dieses Repos).
-- **Ausgangslage:** Uwe hat am 05.11. die kleine Einstiegs-Instanz `webui1` angelegt (Befund in [kai-entry_specs.md](kai-entry_specs.md): SSM-Zugang, privates Subnetz). Alle Kai-Maschinen tragen Debian 13 wie die Maschinen in Axels Heimnetz (Uwe und Axel, 06.11.): `kai-entry` und `kai-gpu` dasselbe offizielle Debian-Image, die Test-VMs im Heimnetz das Debian-Cloud-Image desselben Builds. Rollen und Stacks entstehen nach dem Muster des Heim-Setups; was Uwe in AWS bereitstellt, ist der Maßstab. Kai trennt von Anfang an Oberfläche und Rechenknoten.
+- **Ausgangslage:** Uwe hat am 06.11. beide Instanzen bereitgestellt, `webui1` als `kai-entry` und `kai1` als `kai-gpu`, beide aus dem Debian-Image 20261103-2651 (Befund in [instance_specs.md](instance_specs.md): SSM-Zugang, privates Subnetz, Egress). Alle Kai-Maschinen tragen Debian 13 wie die Maschinen in Axels Heimnetz (Uwe und Axel, 06.11.): `kai-entry` und `kai-gpu` dasselbe offizielle Debian-Image, die Test-VMs im Heimnetz das Debian-Cloud-Image desselben Builds. Rollen und Stacks entstehen nach dem Muster des Heim-Setups; was Uwe in AWS bereitstellt, ist der Maßstab. Kai trennt von Anfang an Oberfläche und Rechenknoten.
 
 ## 2. Zielbild: `kai-entry` und `kai-gpu`
 
@@ -46,7 +46,7 @@ später daneben, alle als weitere Einträge in LiteLLM: GPU-VM B (größer) · l
 
 | | `kai-entry` | `kai-gpu` |
 |---|---|---|
-| AWS-Name | `webui1`, von Uwe angelegt; `kai-entry` ist der Name im Konzept und im Inventory | neu anzulegen, nach demselben Muster |
+| AWS-Name | `webui1` (`i-0f6dc684ea90b09cf`), von Uwe angelegt; `kai-entry` ist der Name im Konzept und im Inventory | `kai1` (`i-0f896ee21e1ae8c72`), von Uwe angelegt; `kai-gpu` ist der Name im Konzept und im Inventory |
 | System | Debian 13, offizielles Debian-Image | dasselbe Image; NVIDIA-Treiber, Docker und Container Toolkit installiert Ansible |
 | Betrieb | läuft durch, günstig | nur an, wenn gebraucht; später automatisch |
 | Hält | Konten, Chat-Verlauf, Dokumente, Werkzeuge, Keys, Modellliste | Modelldateien, Grafikkarte |
@@ -75,7 +75,7 @@ Begründungen:
 - **kai-entry:** alle Container hängen in einem Compose-Netz `kai`. Host-Ports: `open-webui` auf `kai_webui_bind:3000` für die Nutzer, `litellm` auf `kai_litellm_bind:4000` für Harnesses. Beide Adressen sind die VPN-seitige Adresse der Maschine oder `127.0.0.1`, je nach Zugangsweg. `brave-mcp` und `litellm-db` sind nur aus dem Docker-Netz erreichbar.
 - **kai-gpu:** `llama-swap` veröffentlicht 8080 auf der VPC-Adresse, weil `kai-entry` es erreichen muss. llama-swap hat keine Authentifizierung, deshalb lässt die Security Group 8080 nur aus der Security Group von `kai-entry` zu, nie aus dem VPN und nie öffentlich. Die Verwaltungsendpunkte von llama-swap (`/running`, `/unload`, `/logs`, Web-UI) bleiben damit intern; für Admin-Blicke: SSM-Portweiterleitung.
 - **Adressierung:** `kai-entry` erreicht `kai-gpu` ausschließlich über den DNS-Namen in der Ansible-Variable `kai_gpu_endpoint` (Vorschlag `http://gpu.kai.internal:8080`, private Route-53-Zone von Uwe). Keine IP-Adresse im Repo, in `litellm.yaml` oder in einer Compose-Datei. Siehe §3.
-- **Ausgehend:** Image-Registries, Hugging Face (nur `kai-gpu`), api.search.brave.com (nur `kai-entry`), Debian-Spiegel, Dockers apt-Repo, NVIDIAs CUDA-Repo (Treiber und Toolkit, nur `kai-gpu`), Anthropic (Claude Code, nur `kai-entry`). Liste in [02 §3](02_anforderungen-infrastruktur.md). Die heutige Instanz `webui1` hat **keinen** Egress, das ist eine Voraussetzung an die Infrastruktur.
+- **Ausgehend:** Image-Registries, Hugging Face (nur `kai-gpu`), api.search.brave.com (nur `kai-entry`), Debian-Spiegel, Dockers apt-Repo, NVIDIAs CUDA-Repo (Treiber und Toolkit, nur `kai-gpu`), Anthropic (Claude Code, nur `kai-entry`). Liste in [02 §3](02_anforderungen-infrastruktur.md). Beide Instanzen haben heute Egress ohne Allowlist ([Bestandsaufnahme §4](instance_specs.md)).
 
 ### Daten und Persistenz
 
@@ -104,7 +104,7 @@ Ein Sprachmodell **speichert nichts**. Was gespeichert wird (Chats, Uploads), li
 
 | Maschine | Ressource | Vorhanden | Verbraucher |
 |---|---|---|---|
-| kai-entry (t3.medium) | RAM | 4 GB | Open WebUI ~1–1,5 GB (mit Embedding-Modell), LiteLLM ~0,5–1 GB, Postgres ~0,2 GB, brave-mcp ~0,1 GB, OS. `webui1` hat heute 913 MB; Uwe hat angeboten, die Instanz zu vergrößern |
+| kai-entry (t3.medium) | RAM | 4 GB | Open WebUI ~1–1,5 GB (mit Embedding-Modell), LiteLLM ~0,5–1 GB, Postgres ~0,2 GB, brave-mcp ~0,1 GB, OS. `webui1` hat heute 939 MB; Uwe hat angeboten, die Instanz zu vergrößern |
 | kai-entry | vCPU | 2 | unkritisch; Last entsteht nur beim Hochladen und Einbetten von Dokumenten |
 | kai-entry | Platte | Root 30 GB + Volume `kai-data` 20 GB | Images ~6 GB auf Root; Daten auf dem Volume |
 | kai-gpu (g4dn.xlarge) | GPU-Speicher | 16 GB (T4) | Modell ~11 GB + KV-Cache für Kontext; siehe [03](03_modellvorschlag.md) |
