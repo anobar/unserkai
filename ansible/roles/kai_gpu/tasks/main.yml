@@ -65,6 +65,7 @@
         cmd: nvidia-smi -L
       register: kai_gpu_smi
       changed_when: false
+      check_mode: false
       failed_when: kai_gpu_smi.rc != 0
       retries: 5
       delay: 10
@@ -173,6 +174,7 @@
     url: "http://127.0.0.1:{{ kai_gpu_port }}/v1/models"
     return_content: true
   register: kai_gpu_models_response
+  check_mode: false
   retries: 12
   delay: 5
   until: kai_gpu_models_response.status == 200

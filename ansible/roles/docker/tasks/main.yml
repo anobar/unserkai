@@ -144,12 +144,14 @@
     cmd: docker --version
   register: docker_version
   changed_when: false
+  check_mode: false
 
 - name: Docker-Compose-Version ermitteln
   ansible.builtin.command:
     cmd: docker compose version
   register: docker_compose_version
   changed_when: false
+  check_mode: false
 
 - name: Installierte Docker-Version anzeigen
   ansible.builtin.debug:

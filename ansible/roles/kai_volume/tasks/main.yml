@@ -16,6 +16,7 @@
     cmd: blkid -L {{ kai_volume_label }}
   register: kai_volume_found
   changed_when: false
+  check_mode: false
   failed_when: kai_volume_found.rc not in [0, 2]
 
 - name: Datenplatte benannt verlangen
@@ -32,6 +33,7 @@
     cmd: realpath --canonicalize-existing {{ kai_volume_device }}
   register: kai_volume_real
   changed_when: false
+  check_mode: false
   when: kai_volume_found.rc != 0 and kai_volume_required | bool
 
 - name: Datenplatte untersuchen
@@ -39,6 +41,7 @@
     cmd: lsblk --json --paths --output NAME,TYPE,FSTYPE {{ kai_volume_real.stdout }}
   register: kai_volume_lsblk
   changed_when: false
+  check_mode: false
   when: kai_volume_found.rc != 0 and kai_volume_required | bool
 
 - name: Leere Platte verlangen

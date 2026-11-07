@@ -101,6 +101,7 @@
       ps --status running --services
   register: kai_entry_running_services
   changed_when: false
+  when: not ansible_check_mode
 
 - name: Laufende Dienste pruefen
   ansible.builtin.assert:
@@ -110,6 +111,7 @@
       Dienst {{ item }} laeuft nicht.
       Bitte 'docker compose ps' pruefen.
     quiet: true
+  when: not ansible_check_mode
   loop:
     - open-webui
     - litellm
