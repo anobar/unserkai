@@ -6,7 +6,7 @@ name: kai
 
 services:
   open-webui:
-    image: ghcr.io/open-webui/open-webui:v0.12.3
+    image: ghcr.io/open-webui/open-webui:v0.12.3@sha256:a537bbe1e6b428820f52ed4a029d7fff97062e24d5cf32c365fba36fd0542def
     restart: unless-stopped
     env_file:
       - .env
@@ -32,7 +32,7 @@ services:
       start_period: 90s
 
   litellm:
-    image: ghcr.io/berriai/litellm:main-stable
+    image: ghcr.io/berriai/litellm:main-v1.83.14-stable.patch.3@sha256:f12d528d4a05add56cb09e54c5126088f2edc6bdf3a2f943bcd3a32b08769da2
     restart: unless-stopped
     env_file: .env
     environment:
@@ -56,7 +56,7 @@ services:
       start_period: 60s
 
   litellm-db:
-    image: docker.io/library/postgres:17
+    image: docker.io/library/postgres:17@sha256:ff87138949ad9a46f32ff23bd6852b52ce024a13dffe9b4087be98292cdd3b4f
     restart: unless-stopped
     environment:
       POSTGRES_USER: litellm
@@ -72,7 +72,7 @@ services:
       retries: 10
 
   brave-mcp:
-    image: docker.io/mcp/brave-search:latest
+    image: docker.io/mcp/brave-search:latest@sha256:f58a5c22c1196ec7bd1ca586ce216f2334fc298550ddcf652c0e8adb6d256d78
     restart: unless-stopped
     env_file:
       - path: ./proxy.env

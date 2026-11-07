@@ -4,6 +4,7 @@ INVENTORY        ?= -i inventory/hosts.yml $(if $(wildcard inventory/local),-i i
 PLAYBOOK         ?= playbooks/site.yml
 TAGS             ?=
 LIMIT            ?=
+LIMIT_OPT        = $(if $(LIMIT),--limit $(LIMIT),)
 
 .PHONY: help deps syntax lint ping check deploy deploy-limit
 
@@ -27,13 +28,13 @@ lint:
 	ansible-lint
 
 ping:
-	$(ANSIBLE) all $(INVENTORY) -m ansible.builtin.ping
+	$(ANSIBLE) all $(INVENTORY) $(LIMIT_OPT) -m ansible.builtin.ping
 
 check:
-	$(ANSIBLE_PLAYBOOK) $(INVENTORY) --check --diff $(if $(TAGS),--tags $(TAGS),) $(PLAYBOOK)
+	$(ANSIBLE_PLAYBOOK) $(INVENTORY) $(LIMIT_OPT) --check --diff $(if $(TAGS),--tags $(TAGS),) $(PLAYBOOK)
 
 deploy:
-	$(ANSIBLE_PLAYBOOK) $(INVENTORY) $(if $(TAGS),--tags $(TAGS),) $(PLAYBOOK)
+	$(ANSIBLE_PLAYBOOK) $(INVENTORY) $(LIMIT_OPT) $(if $(TAGS),--tags $(TAGS),) $(PLAYBOOK)
 
 deploy-limit:
 	$(ANSIBLE_PLAYBOOK) $(INVENTORY) --limit $(LIMIT) $(if $(TAGS),--tags $(TAGS),) $(PLAYBOOK)

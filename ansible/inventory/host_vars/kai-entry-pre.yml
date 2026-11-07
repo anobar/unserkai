@@ -3,3 +3,7 @@
 ansible_user: admin
 # Der Host, dessen Modelle LiteLLM ausliefert (kai_gpu_models).
 kai_gpu_peer: kai-gpu-pre
+# Der Treiber der Test-VM gibt der Datenplatte die Seriennummer kai-data.
+kai_volume_required: true
+kai_volume_by_id:
+  - virtio-kai-data

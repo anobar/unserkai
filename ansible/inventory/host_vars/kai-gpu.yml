@@ -17,3 +17,6 @@ kai_gpu_models:
     file: gpt-oss-20b-MXFP4.gguf
     ctx_size: 32768
     reasoning_effort: medium
+# Nur das EBS-Volume; das Instance Storage (nvme1n1) heisst Amazon_EC2_NVMe_Instance_Storage und passt nicht.
+kai_volume_by_id:
+  - nvme-Amazon_Elastic_Block_Store_*

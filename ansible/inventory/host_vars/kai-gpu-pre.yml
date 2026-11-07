@@ -7,3 +7,7 @@ kai_gpu_models:
   - name: qwen3-0.6b
     file: Qwen3-0.6B-Q8_0.gguf
     ctx_size: 4096
+# Der Treiber der Test-VM gibt der Datenplatte (vdc) die Seriennummer kai-models, die Platte vdb (scratch) keine.
+kai_volume_required: true
+kai_volume_by_id:
+  - virtio-kai-models

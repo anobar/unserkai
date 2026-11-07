@@ -18,32 +18,66 @@
   changed_when: false
   failed_when: kai_volume_found.rc not in [0, 2]
 
-- name: Unbenutzte Datenplatten suchen
-  ansible.builtin.command:
-    cmd: lsblk --json --paths --output NAME,TYPE,FSTYPE
-  register: kai_volume_lsblk
-  changed_when: false
+- name: By-id Muster verlangen
+  ansible.builtin.assert:
+    that:
+      - kai_volume_by_id | length > 0
+    fail_msg: >-
+      kai_volume_by_id muss gesetzt sein (Liste von Glob-Mustern unter /dev/disk/by-id).
+    quiet: true
   when: kai_volume_found.rc != 0 and kai_volume_required | bool
 
-- name: Genau eine unbenutzte Datenplatte verlangen
-  ansible.builtin.assert:
-    that: kai_volume_candidates | length == 1
-    fail_msg: >-
-      Kein Dateisystem mit dem Label {{ kai_volume_label }} und keine einzelne
-      leere Platte gefunden (Kandidaten: {{ kai_volume_candidates }}).
-    quiet: true
-  vars:
+- name: By-id Links suchen
+  ansible.builtin.find:
+    paths: /dev/disk/by-id
+    patterns: "{{ kai_volume_by_id }}"
+    excludes: '*-part*'
+    file_type: link
+  register: kai_volume_links
+  when: kai_volume_found.rc != 0 and kai_volume_required | bool
+
+- name: By-id Links aufloesen
+  ansible.builtin.command:
+    cmd: realpath {{ item.path }}
+  loop: "{{ kai_volume_links.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  changed_when: false
+  register: kai_volume_real
+  when: kai_volume_found.rc != 0 and kai_volume_required | bool
+
+- name: Blockgeraete auflisten
+  ansible.builtin.command:
+    cmd: lsblk --json --paths --output NAME,TYPE,FSTYPE
+  changed_when: false
+  register: kai_volume_lsblk
+  when: kai_volume_found.rc != 0 and kai_volume_required | bool
+
+- name: Kandidaten bestimmen
+  ansible.builtin.set_fact:
     kai_volume_candidates: >-
       {{ (kai_volume_lsblk.stdout | from_json).blockdevices
-         | selectattr('type', 'eq', 'disk') | rejectattr('children', 'defined')
-         | selectattr('fstype', 'none') | map(attribute='name') | list }}
+         | selectattr('type', 'eq', 'disk')
+         | rejectattr('children', 'defined')
+         | selectattr('fstype', 'none')
+         | selectattr('name', 'in', kai_volume_real.results | map(attribute='stdout') | list)
+         | map(attribute='name') | list }}
+  when: kai_volume_found.rc != 0 and kai_volume_required | bool
+
+- name: Genau eine Kandidatin verlangen
+  ansible.builtin.assert:
+    that:
+      - kai_volume_candidates | length == 1
+    fail_msg: >-
+      Kein Dateisystem mit dem Label {{ kai_volume_label }} und keine einzelne
+      leere Platte gefunden (Kandidaten: {{ kai_volume_candidates }},
+      By-id Muster: {{ kai_volume_by_id }}).
+    quiet: true
   when: kai_volume_found.rc != 0 and kai_volume_required | bool
 
 - name: Dateisystem mit dem Label anlegen
   ansible.builtin.command:
-    cmd: mkfs.{{ kai_volume_fstype }} -L {{ kai_volume_label }} {{ (kai_volume_lsblk.stdout | from_json).blockdevices
-      | selectattr('type', 'eq', 'disk') | rejectattr('children', 'defined')
-      | selectattr('fstype', 'none') | map(attribute='name') | first }}
+    cmd: mkfs.{{ kai_volume_fstype }} -L {{ kai_volume_label }} {{ kai_volume_candidates[0] }}
   changed_when: true
   when: kai_volume_found.rc != 0 and kai_volume_required | bool
 

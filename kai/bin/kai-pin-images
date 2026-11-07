@@ -15,12 +15,13 @@ usage() {
 resolve_digest() {
   local ref digest
   ref=$1
-  if ! digest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest.Digest}}'); then
+  # Digest of the raw manifest: needs no blob download, so it also works behind a proxy that blocks Docker Hub blobs.
+  if ! digest=$(docker buildx imagetools inspect --raw "$ref" | sha256sum); then
     printf 'error: could not inspect %s\n' "$ref" >&2
     exit 1
   fi
 
-  digest=${digest//\"/}
+  digest=sha256:${digest%% *}
   if [[ ! $digest =~ ^sha256:[0-9a-f]{64}$ ]]; then
     printf 'error: invalid digest for %s: %s\n' "$ref" "$digest" >&2
     exit 1
