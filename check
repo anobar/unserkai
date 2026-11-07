@@ -10,7 +10,7 @@ usage() {
   cat <<EOF
 Usage: check [-h|--help] [--only <step>]
 
-Steps: ansible-lint, yamllint, shellcheck, compose, gitleaks, private-addresses
+Steps: ansible-lint, yamllint, shellcheck, compose, templates, gitleaks, private-addresses
 EOF
 }
 
@@ -91,6 +91,34 @@ step_compose() {
   return "$failed"
 }
 
+step_templates() {
+  need ansible || return 1
+  need yamllint || return 1
+  local -a files=()
+  mapfile -d '' -t files < <(git ls-files -z -- 'kai/compose/*/*.yaml.j2')
+  if [[ ${#files[@]} -eq 0 ]]; then
+    return 77
+  fi
+  local tmp failed=0 f dir group
+  tmp="$(mktemp -d)"
+  for f in "${files[@]}"; do
+    dir="$(basename "$(dirname "$f")")"
+    group="kai_$dir"
+    # Jede Vorlage wird fuer alle Hosts ihrer Gruppe gerendert und dann gelintet.
+    if ! (cd ansible && ANSIBLE_BECOME=false ansible "$group" -i inventory/hosts.yml -c local \
+      -m ansible.builtin.template \
+      -a "src=$PWD/../$f dest=$tmp/$dir-{{ inventory_hostname }}.yaml mode=0644") >"$tmp/out" 2>&1; then
+      cat "$tmp/out"
+      failed=1
+    fi
+  done
+  if compgen -G "$tmp/*.yaml" >/dev/null; then
+    yamllint -s -d '{extends: default, rules: {line-length: disable, document-start: disable, truthy: {check-keys: false}}}' "$tmp"/*.yaml || failed=1
+  fi
+  rm -rf "$tmp"
+  return "$failed"
+}
+
 step_gitleaks() {
   need gitleaks || return 1
   if gitleaks dir --help >/dev/null 2>&1; then
@@ -161,7 +189,7 @@ main() {
     esac
   done
 
-  local all_steps=(ansible-lint yamllint shellcheck compose gitleaks private-addresses)
+  local all_steps=(ansible-lint yamllint shellcheck compose templates gitleaks private-addresses)
   local failures=0
 
   if [[ -n "$only" ]]; then

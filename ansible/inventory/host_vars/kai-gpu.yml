@@ -12,4 +12,6 @@ ansible_ssh_common_args: >-
 kai_gpu_vram_gb: 16
 kai_gpu_models:
   - name: gpt-oss-20b
+    file: gpt-oss-20b-mxfp4.gguf
     ctx_size: 32768
+    reasoning_effort: medium

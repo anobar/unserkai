@@ -1,3 +1,5 @@
 ---
 # Test-VM im Heimnetz mit dem Image von kai-entry; Adresse und Proxy stehen im Overlay inventory/local/.
 ansible_user: admin
+# Der Host, dessen Modelle LiteLLM ausliefert (kai_gpu_models).
+kai_gpu_peer: kai-gpu-pre

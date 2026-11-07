@@ -5,4 +5,5 @@ kai_gpu_enabled: false
 kai_gpu_vram_gb: 0
 kai_gpu_models:
   - name: qwen3-0.6b
+    file: Qwen3-0.6B-Q8_0.gguf
     ctx_size: 4096

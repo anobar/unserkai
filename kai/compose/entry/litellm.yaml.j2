@@ -1,0 +1,18 @@
+# LiteLLM fuer {{ inventory_hostname }}; von Ansible aus den Modellen von {{ kai_gpu_peer }} erzeugt.
+# Weitere Backends (zweite GPU-VM, lezki, OpenAI, Anthropic) kommen als weitere model_list-Eintraege dazu.
+model_list:
+{% for m in hostvars[kai_gpu_peer].kai_gpu_models %}
+  - model_name: {{ m.name }}
+    litellm_params:
+      model: openai/{{ m.name }}
+      api_base: {{ kai_gpu_endpoint }}/v1
+      api_key: none
+{% endfor %}
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+
+litellm_settings:
+  drop_params: true
+  request_timeout: 600

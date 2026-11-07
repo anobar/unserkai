@@ -10,11 +10,10 @@ services:
     env_file:
       - path: ./proxy.env
         required: false
-    command: ["-config", "/app/config.yaml", "-listen", ":8080"]
     ports:
       - "${KAI_GPU_BIND:-127.0.0.1}:${KAI_GPU_PORT:-8080}:8080"
     volumes:
-      - ./llama-swap.yaml:/app/config.yaml:ro
+      - ./llama-swap.yaml:/etc/llama-swap/config/config.yaml:ro
       - ${KAI_MODELS_DIR:-/opt/kai/models}:/models:ro
     deploy:
       resources:
