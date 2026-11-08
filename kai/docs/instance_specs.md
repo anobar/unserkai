@@ -12,7 +12,7 @@ Erhoben am 2026-11-07 über SSM-Sitzung (Standard-Shell-Dokument) und EC2-API mi
 | Image | `ami-04e9b382a9b6299a6` | dasselbe |
 | Zone | `eu-central-1b`, x86_64 | dieselbe |
 | Boot | Legacy-BIOS (`CurrentInstanceBootMode=legacy-bios`), GRUB `i386-pc`; kein UEFI, kein Secure Boot | dasselbe |
-| Root-Volume | EBS 20 GB `vol-0d61b13d20663e349`, `DeleteOnTermination=true` | EBS 20 GB `vol-0141318f49efc45b7`, `DeleteOnTermination=true` |
+| Root-Volume | EBS 30 GB (`aws/webui1/ec2.tf`), `DeleteOnTermination=true` | EBS 30 GB (`aws/kai1/ec2.tf`), `DeleteOnTermination=true`; 50 GB bei Uwe beantragt |
 | Weitere Platten | keine | EBS 150 GB `vol-0b351d3718d5b2104` als `/dev/sdf`, `DeleteOnTermination=false`, ohne Dateisystem; lokale NVMe (Instance Storage) 116,4 GiB |
 | Instanzprofil | `terraform/webui1` | `terraform/kai1` |
 | Security Group | `webui1` | `kai1` |
@@ -68,7 +68,7 @@ Nicht einsehbar, weil der Rolle `ec2:DescribeImages`, `ec2:DescribeVolumes` und 
 | §1.3 `kai-gpu` als `g4dn.xlarge` in der Zone des Volumes | erfüllt |
 | §1.5 Benutzer `admin` mit sudo ohne Passwort | erfüllt |
 | §1.6 Tags `Name=kai-entry`/`kai-gpu`, `kai:role` | offen: `Name=webui1`/`kai1`, kein `kai:role` |
-| §1.7 Root 30 GB | offen: 20 GB auf beiden |
+| §1.7 Root 30 GB | erfüllt: 30 GB auf beiden laut Terraform; kai1 braucht 50 GB (Wechsel des CUDA-Images) |
 | §2.1 Volume `kai-data` | offen: kein zweites Volume an `kai-entry` |
 | §2.2, §2.3 Volume `kai-models` 150 GB, bleibt beim Terminieren | erfüllt (Typ gp3 nicht prüfbar) |
 | §3.1 Egress | erfüllt, ohne Allowlist |
@@ -83,7 +83,7 @@ Nicht einsehbar, weil der Rolle `ec2:DescribeImages`, `ec2:DescribeVolumes` und 
 
 1. Das `genericcloud`-Image 20261103-2651 bleibt die richtige Basis: gleiche Pakete und Versionen wie die Instanzen bis auf die 15 Pakete aus §2 und `amazon-ssm-agent`, die keine Rolle braucht.
 2. Die Instanzen booten per Legacy-BIOS über die BIOS-Boot-Partition, nicht per UEFI; mit SeaBIOS statt OVMF nimmt die Test-VM denselben Bootpfad aus demselben Image, und Secure Boot spielt auf keiner Seite eine Rolle.
-3. Root ist auf den Instanzen 20 GB, nicht 30 GB; solange Uwe nicht vergrößert (02 §1.7), zeigt eine Test-VM mit 20 GB, ob Images und Treiber auf Root passen.
+3. Root ist auf beiden Instanzen 30 GB wie in Uwes Terraform, und die Test-VMs tragen dieselbe Größe; auf kai1 lief die Root beim Wechsel des llama-swap-CUDA-Images voll (altes und neues Image samt Entpacken, 17 GB im Normalbetrieb), daher 50 GB bei Uwe beantragt, und kai-gpu-pre folgt erst nach seiner Vergrößerung.
 4. `kai-entry` hat heute 939 MB RAM; die Test-VM `kai-entry-pre` bildet mit 4 GiB das Ziel `t3.medium` ab, nicht den Ist-Stand.
 5. Die Test-VMs übernehmen aus der user-data nur `/etc/apt/apt.conf.d/99force-ipv4`; den Rest (SSM-Agent, `ssm-user`) gibt es nur in AWS.
 6. Der Standard-Benutzer `admin` entsteht in der Test-VM mit denselben Gruppen und `sudo` wie in `01_debian_cloud.cfg` (§2), nicht mit dem `default`-Benutzer `debian` des genericcloud-Images.
