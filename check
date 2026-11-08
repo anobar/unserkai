@@ -12,7 +12,7 @@ Usage: check [-h|--help] [--only <step>] [--] [FILE...]
 
 FILE arguments (as passed by it-check) run the whole gate, since every step covers the repository.
 
-Steps: ansible-lint, yamllint, shellcheck, python, compose, templates, gitleaks, private-addresses
+Steps: ansible-lint, apt-cache, yamllint, shellcheck, python, compose, templates, gitleaks, private-addresses
 EOF
 }
 
@@ -26,6 +26,16 @@ need() {
 step_ansible-lint() {
   need ansible-lint || return 1
   (cd ansible && ansible-lint)
+}
+
+step_apt-cache() {
+  need python3 || return 1
+  local -a files=()
+  mapfile -d '' -t files < <(git ls-files -z -- 'ansible/roles/*/tasks/*.yml' 'ansible/roles/*/handlers/*.yml')
+  if [[ ${#files[@]} -eq 0 ]]; then
+    return 77
+  fi
+  python3 -I ansible/lint/apt_cache.py "${files[@]}"
 }
 
 step_yamllint() {
@@ -214,7 +224,7 @@ main() {
   done
   # Remaining arguments are files; the steps scan the whole repository anyway.
 
-  local all_steps=(ansible-lint yamllint shellcheck python compose templates gitleaks private-addresses)
+  local all_steps=(ansible-lint apt-cache yamllint shellcheck python compose templates gitleaks private-addresses)
   local failures=0
 
   if [[ -n "$only" ]]; then

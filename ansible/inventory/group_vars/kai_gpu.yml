@@ -19,3 +19,7 @@ docker_daemon_config: >-
       'live-restore': true}
      | combine({'runtimes': {'nvidia': {'path': 'nvidia-container-runtime', 'runtimeArgs': []}}}
                if kai_gpu_enabled | bool else {}) }}
+
+# Modelle, die llama-swap beim Start laedt (hooks.on_startup.preload), damit der erste Chat nicht
+# auf das Laden von der EBS-Platte wartet (Kaltstart 98 s am 2026-11-08); [] schaltet es ab.
+kai_gpu_preload: "{{ kai_gpu_models[:1] | map(attribute='name') | list }}"

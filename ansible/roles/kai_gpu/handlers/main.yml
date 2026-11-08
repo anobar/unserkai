@@ -1,7 +1,9 @@
 ---
+# Ohne GPU (Test-VM mit kai_gpu_driver_install) bringt der Neustart nichts und wuerde den Test nur verlaengern.
 - name: Neustart nach neuem Treiber
   ansible.builtin.reboot:
     reboot_timeout: 600
+  when: kai_gpu_enabled | bool
 
 - name: Llama-swap neu starten
   ansible.builtin.command:

@@ -108,12 +108,18 @@
       Bitte Modus 0600 setzen und die Rolle erneut ausfuehren.
     quiet: true
 
+- name: Platz fuer fehlende Images pruefen
+  ansible.builtin.include_role:
+    name: docker
+    tasks_from: compose_space
+  vars:
+    docker_compose_args: "{{ kai_entry_compose_args }}"
+    docker_min_free_gb: "{{ kai_entry_min_free_gb }}"
+
 - name: Stack starten
   ansible.builtin.command:
     cmd: >-
-      docker compose --project-directory {{ kai_entry_install_dir }}
-      --env-file {{ kai_entry_install_dir }}/.env
-      --env-file {{ kai_entry_install_dir }}/stack.env
+      docker compose {{ kai_entry_compose_args }}
       up -d --wait --wait-timeout {{ kai_entry_wait_timeout }} --quiet-pull
   register: kai_entry_up
   changed_when: >-
@@ -121,12 +127,16 @@
     'Recreated' in kai_entry_up.stderr or
     'Created' in kai_entry_up.stderr
 
+- name: Alte Images entfernen
+  ansible.builtin.include_role:
+    name: docker
+    tasks_from: compose_prune
+  when: kai_entry_up is changed
+
 - name: Laufende Dienste anzeigen
   ansible.builtin.command:
     cmd: >-
-      docker compose --project-directory {{ kai_entry_install_dir }}
-      --env-file {{ kai_entry_install_dir }}/.env
-      --env-file {{ kai_entry_install_dir }}/stack.env
+      docker compose {{ kai_entry_compose_args }}
       ps --status running --services
   register: kai_entry_running_services
   changed_when: false

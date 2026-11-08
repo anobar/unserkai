@@ -30,7 +30,7 @@ Harnesses (OpenCode, OpenClaw, …) ──────────────�
 │                                               │                                        │
 │  Volume /opt/kai (EBS): data/open-webui · data/litellm-db · .env                            │
 └───────────────────────────────────────────────┼────────────────────────────────────────┘
-                                                │ OpenAI-API an gpu.kai.internal:8080
+                                                │ OpenAI-API an kai1.unserkai.de:8080
                                                 │ (nur im VPC, Security Group)
 ┌───────────────────────────────────────────────▼──── kai-gpu · g4dn.xlarge · bei Bedarf an ──┐
 │                                                                                             │
@@ -74,7 +74,7 @@ Begründungen:
 
 - **kai-entry:** alle Container hängen in einem Compose-Netz `kai`. Host-Ports: `open-webui` auf `kai_webui_bind:3000` für die Nutzer, `litellm` auf `kai_litellm_bind:4000` für Harnesses. Beide Adressen sind die VPN-seitige Adresse der Maschine oder `127.0.0.1`, je nach Zugangsweg. `brave-mcp` und `litellm-db` sind nur aus dem Docker-Netz erreichbar.
 - **kai-gpu:** `llama-swap` veröffentlicht 8080 auf der VPC-Adresse, weil `kai-entry` es erreichen muss. llama-swap hat keine Authentifizierung, deshalb lässt die Security Group 8080 nur aus der Security Group von `kai-entry` zu, nie aus dem VPN und nie öffentlich. Die Verwaltungsendpunkte von llama-swap (`/running`, `/unload`, `/logs`, Web-UI) bleiben damit intern; für Admin-Blicke: SSM-Portweiterleitung.
-- **Adressierung:** `kai-entry` erreicht `kai-gpu` ausschließlich über den DNS-Namen in der Ansible-Variable `kai_gpu_endpoint` (Vorschlag `http://gpu.kai.internal:8080`, private Route-53-Zone von Uwe). Keine IP-Adresse im Repo, in `litellm.yaml` oder in einer Compose-Datei. Siehe §3.
+- **Adressierung:** `kai-entry` erreicht `kai-gpu` ausschließlich über den DNS-Namen in der Ansible-Variable `kai_gpu_endpoint` (Vorschlag `http://kai1.unserkai.de:8080`, private Route-53-Zone von Uwe). Keine IP-Adresse im Repo, in `litellm.yaml` oder in einer Compose-Datei. Siehe §3.
 - **Ausgehend:** Image-Registries, Hugging Face (nur `kai-gpu`), api.search.brave.com (nur `kai-entry`), Debian-Spiegel, Dockers apt-Repo, NVIDIAs CUDA-Repo (Treiber und Toolkit, nur `kai-gpu`). Liste in [02 §3](02_anforderungen-infrastruktur.md). Beide Instanzen haben heute Egress ohne Allowlist ([Bestandsaufnahme §4](instance_specs.md)).
 
 ### Daten und Persistenz
@@ -129,7 +129,7 @@ Aufwand für einen Wechsel von `kai-gpu`, sobald die Rollen aus Phase 2 stehen:
 | Schritt | Wer | Dauer |
 |---|---|---|
 | Terraform: Instanztyp oder Image ändern, Volume `kai-models` anhängen, DNS-Eintrag | Uwe | 10 bis 15 min |
-| Instanz-ID in `host_vars` eintragen, `make deploy LIMIT=kai-gpu` | Axel | 10 bis 15 min Laufzeit, davon der Großteil Treiberbau (DKMS), ein Neustart und Image-Pull |
+| Instanz-ID in `host_vars` eintragen, `make deploy LIMIT=kai1` | Axel | 10 bis 15 min Laufzeit, davon der Großteil Treiberbau (DKMS), ein Neustart und Image-Pull |
 | Erster Chat, Modell lädt, Antwortzeit prüfen | Axel | 5 min |
 | Nur wenn das Volume neu ist: Modelle laden | Axel | 3 bis 5 min pro Modell |
 

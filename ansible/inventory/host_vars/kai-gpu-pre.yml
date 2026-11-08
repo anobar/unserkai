@@ -2,6 +2,8 @@
 # Test-VM ohne GPU im Heimnetz; Adresse und Proxy stehen im Overlay inventory/local/.
 ansible_user: admin
 kai_gpu_enabled: false
+# Treiber trotzdem installieren: CUDA-Repo, Pinning und DKMS-Build laufen so vor AWS einmal durch.
+kai_gpu_driver_install: true
 kai_gpu_vram_gb: 0
 kai_gpu_models:
   - name: qwen3-0.6b
