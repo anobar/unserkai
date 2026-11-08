@@ -138,7 +138,7 @@ Rund 30 Minuten, überwiegend Wartezeit. Das Risiko sitzt im Treiber: ein neuer 
 ## 4. Betrieb
 
 - **kai-entry läuft durch.** Beim Neustart kommen die Container mit `restart: unless-stopped` von selbst hoch.
-- **kai-gpu wird von Hand gestartet und gestoppt** (`aws ec2 start-instances`, Axel oder Uwe). Beim Start kommt llama-swap von selbst hoch; das erste Modell lädt beim ersten Chat (10–40 s von der EBS-Platte). Ist `kai-gpu` aus, meldet LiteLLM das Modell als nicht erreichbar und Open WebUI zeigt ehrlich „Modell antwortet nicht“; Konten und Verlauf bleiben nutzbar. Automatisches Wecken bei Anfrage und Stoppen nach Leerlauf ist eine eigene Aufgabe für später (§5).
+- **kai-gpu wird von Hand gestartet und gestoppt** (`aws ec2 start-instances`, Axel oder Uwe). Beim Start kommt llama-swap von selbst hoch; llama-swap lädt das erste Modell gleich beim Start vor (≈ 100 s von der EBS-Platte bei 125 MB/s, gemessen 08.11.); bis zum ersten Token vergehen ab `start-instances` ≈ 2,5–3 min. Ist `kai-gpu` aus, meldet LiteLLM das Modell als nicht erreichbar und Open WebUI zeigt ehrlich „Modell antwortet nicht“; Konten und Verlauf bleiben nutzbar. Automatisches Wecken bei Anfrage und Stoppen nach Leerlauf: Vorschlag in [05](05_vorschlag-auto-stop.md).
 - **Updates:** Images sind auf Versionen gepinnt; ein Update ist eine Änderung im Git + `make deploy`. Keine `latest`-Tags.
 - **Snapshots:** `kai-data` vor der Erstinstallation und an Meilensteinen (S1-11). Eine Wiederherstellung ist „Volume aus Snapshot + `make deploy`“.
 - **Logs:** `docker compose logs` je Maschine; llama-swap zeigt Modellwechsel und Lade-Dauer, LiteLLM den Verbrauch pro Key. Keine zentrale Log-Sammlung im Durchstich.
