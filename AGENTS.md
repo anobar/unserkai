@@ -10,7 +10,7 @@ Gemeinsames Infrastruktur-Repo von Uwe, Axel, Nic und Martin: AWS-Grundlage mit 
 
 - `make -C ansible syntax` — Syntaxcheck ohne Verbindung; `make -C ansible lint` — ansible-lint mit Profil `basic` aus `ansible/.ansible-lint`.
 - `make -C ansible ping|check|deploy [TAGS=a,b] [LIMIT=host]` — Verbindungstest, Dry-Run mit Diff, Anwenden.
-- `./check [--only <Schritt>]` ist das eine Prüf-Gate (ansible-lint, yamllint, shellcheck, Python-Syntax, `docker compose config`, Vorlagen rendern, gitleaks, Scan auf private Adressen) und läuft vor jedem Commit über `.githooks/pre-commit`; Ausnahmen für den Adress-Scan stünden in `.check-allow-private-addresses` (heute keine).
+- `./check [--only <Schritt>] [Dateien]` ist das eine Prüf-Gate (Dateien, wie sie der Hook `it-check` übergibt, starten das ganze Gate) (ansible-lint, yamllint, shellcheck, Python-Syntax, `docker compose config`, Vorlagen rendern, gitleaks, Scan auf private Adressen) und läuft vor jedem Commit über `.githooks/pre-commit`; Ausnahmen für den Adress-Scan stünden in `.check-allow-private-addresses` (heute keine).
 - In kai-dev bricht Ansible ohne `LC_ALL=C.UTF-8` mit „unsupported locale setting“ ab; `./check` setzt es selbst, für `make -C ansible` setzt du es von Hand.
 
 ## Bereiche
