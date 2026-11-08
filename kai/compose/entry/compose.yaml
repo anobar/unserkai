@@ -42,6 +42,8 @@ services:
       - "${KAI_LITELLM_BIND:-127.0.0.1}:${KAI_LITELLM_PORT:-4000}:4000"
     volumes:
       - ./litellm.yaml:/app/config.yaml:ro
+      # Namen aus kai_extra_hosts (/etc/hosts der Maschine), solange kai1 kein DNS hat.
+      - /etc/hosts:/etc/hosts:ro
     networks: [kai]
     depends_on:
       litellm-db:

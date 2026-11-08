@@ -5,7 +5,7 @@ name: kai-gpu
 
 services:
   llama-swap:
-    image: ghcr.io/mostlygeek/llama-swap:unified-cuda13-2026-10-20@sha256:6b175cdcef92c0f8bfb1c44511e5305f0b9b8026958ff710a69b690bb8299765
+    image: ghcr.io/mostlygeek/llama-swap:unified-cuda@sha256:77d3353a244f970e7e7b1171c170f04a0e53fc509c0c100724c61c93fa45c989
     restart: unless-stopped
     env_file:
       - path: ./proxy.env

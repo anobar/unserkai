@@ -129,6 +129,9 @@
     enabled: "{{ docker_service_enabled }}"
     daemon_reload: true
 
+- name: Docker mit Daemon- und Proxy-Konfiguration neu starten, falls noetig
+  ansible.builtin.meta: flush_handlers
+
 - name: Benutzer in die Docker-Gruppe aufnehmen
   ansible.builtin.user:
     name: "{{ item }}"
@@ -144,12 +147,14 @@
     cmd: docker --version
   register: docker_version
   changed_when: false
+  check_mode: false
 
 - name: Docker-Compose-Version ermitteln
   ansible.builtin.command:
     cmd: docker compose version
   register: docker_compose_version
   changed_when: false
+  check_mode: false
 
 - name: Installierte Docker-Version anzeigen
   ansible.builtin.debug:

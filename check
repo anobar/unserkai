@@ -8,9 +8,11 @@ export LC_ALL=C.UTF-8 LANG=C.UTF-8
 
 usage() {
   cat <<EOF
-Usage: check [-h|--help] [--only <step>]
+Usage: check [-h|--help] [--only <step>] [--] [FILE...]
 
-Steps: ansible-lint, yamllint, shellcheck, compose, templates, gitleaks, private-addresses
+FILE arguments (as passed by it-check) run the whole gate, since every step covers the repository.
+
+Steps: ansible-lint, apt-cache, yamllint, shellcheck, python, compose, templates, gitleaks, private-addresses
 EOF
 }
 
@@ -24,6 +26,16 @@ need() {
 step_ansible-lint() {
   need ansible-lint || return 1
   (cd ansible && ansible-lint)
+}
+
+step_apt-cache() {
+  need python3 || return 1
+  local -a files=()
+  mapfile -d '' -t files < <(git ls-files -z -- 'ansible/roles/*/tasks/*.yml' 'ansible/roles/*/handlers/*.yml')
+  if [[ ${#files[@]} -eq 0 ]]; then
+    return 77
+  fi
+  python3 -I ansible/lint/apt_cache.py "${files[@]}"
 }
 
 step_yamllint() {
@@ -58,6 +70,21 @@ step_shellcheck() {
     return 0
   fi
   shellcheck -x "${files[@]}"
+}
+
+step_python() {
+  need python3 || return 1
+  local f rc=0 found=0
+  while IFS= read -r -d '' f; do
+    [[ -f "$f" ]] || continue
+    [[ "$f" == bootstrap/* || "$f" == aws/* ]] && continue
+    if [[ "$f" == *.py ]] || head -n1 "$f" | grep -qE '^#!.*\bpython3?\b'; then
+      found=1
+      python3 -I -c 'import sys; compile(open(sys.argv[1]).read(), sys.argv[1], "exec")' "$f" || rc=1
+    fi
+  done < <(git ls-files -z)
+  [[ $found -eq 1 ]] || echo "note: no python files found"
+  return "$rc"
 }
 
 step_compose() {
@@ -176,20 +203,28 @@ main() {
       ;;
     --only)
       if [[ $# -lt 2 ]]; then
-        usage
-        exit 1
+        usage >&2
+        exit 2
       fi
       only="$2"
       shift 2
       ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      usage >&2
+      exit 2
+      ;;
     *)
-      usage
-      exit 1
+      break
       ;;
     esac
   done
+  # Remaining arguments are files; the steps scan the whole repository anyway.
 
-  local all_steps=(ansible-lint yamllint shellcheck compose templates gitleaks private-addresses)
+  local all_steps=(ansible-lint apt-cache yamllint shellcheck python compose templates gitleaks private-addresses)
   local failures=0
 
   if [[ -n "$only" ]]; then
@@ -201,8 +236,8 @@ main() {
       fi
     done
     if [[ $found -eq 0 ]]; then
-      usage
-      exit 1
+      usage >&2
+      exit 2
     fi
     run_step "$only"
   else

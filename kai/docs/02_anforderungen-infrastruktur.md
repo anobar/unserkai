@@ -14,7 +14,7 @@ Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ bl
 | 1.4 | **Treiber `kai-gpu`:** keiner im Image; die Rolle `kai_gpu` installiert ihn wie auf Axels GPU-Rechner aus NVIDIAs CUDA-Repo für Debian 13 (`cuda-keyring`, Header `linux-headers-cloud-amd64` zum laufenden Kernel, `nvidia-driver-cuda` mit dem Open-Kernel-Modul `nvidia-kernel-open-dkms`, `nvidia-container-toolkit` aus demselben Repo) im Zweig 620, dem Long Term Support Branch bis 09/2029, festgehalten mit `nvidia-driver-pinning-620`; Debians eigener Treiber (550) ist für das `cuda13`-Image von llama-swap zu alt (braucht ≥ 580). Für Uwe nichts zu tun | gesetzt |
 | 1.5 | Standard-Benutzer `admin` mit sudo ohne Passwort auf beiden Maschinen (Standard des Debian-Images), erreichbar für Ansible (siehe §6) | Muss |
 | 1.6 | Tags `Name=kai-entry` bzw. `Name=kai-gpu` und `kai:role=entry` bzw. `kai:role=gpu` (für ein späteres dynamisches Inventar) | Soll |
-| 1.7 | Root-Volume `kai-entry` von 20 auf 30 GB (Images ~6 GB; Debian vergrößert das Root-Dateisystem beim Start selbst), `kai-gpu` ebenfalls 30 GB (Treiber mit Kernel-Headern, Docker, CUDA-Image ~5 GB); Root enthält nur OS, Treiber und Images. Bleibt Root bei 20 GB, legt die Rolle Dockers `data-root` auf das Volume `kai-data` | Soll |
+| 1.7 | Root-Volume `kai-entry` von 20 auf 30 GB (Images ~6 GB; Debian vergrößert das Root-Dateisystem beim Start selbst), `kai-gpu` 50 GB (Treiber mit Kernel-Headern, Docker, CUDA-Image `unified-cuda`, im Betrieb 17 von 30 GB belegt; beim Image-Wechsel liegen altes und neues Image samt Entpack-Puffer gleichzeitig auf der Platte, und 30 GB liefen dabei am 07.11.2026 voll); Root enthält nur OS, Treiber und Images. Bleibt Root bei 20 GB, legt die Rolle Dockers `data-root` auf das Volume `kai-data` | Soll |
 
 ## 2. Platten
 
@@ -54,17 +54,17 @@ Alles andere kann ausgehend geblockt werden.
 
 | | Anforderung | Stufe |
 |---|---|---|
-| 4.1 | Private Route-53-Zone (Vorschlag `kai.internal`) mit dem Eintrag `gpu.kai.internal` auf die private Adresse von `kai-gpu`; Terraform pflegt ihn beim Ersetzen der Maschine nach. `kai-entry` kennt `kai-gpu` nur unter diesem Namen (`kai_gpu_endpoint`) | Muss |
+| 4.1 | Private Route-53-Zone `unserkai.de` mit dem Eintrag `kai1.unserkai.de` auf die private Adresse von `kai-gpu`; Terraform pflegt ihn beim Ersetzen der Maschine nach. `kai-entry` kennt `kai-gpu` nur unter diesem Namen (`kai_gpu_endpoint`) | Muss |
 | 4.2 | Security Group `kai-gpu`: eingehend nur TCP 8080 aus der Security Group `kai-entry` (per Gruppen-ID, nicht per IP). llama-swap hat keine Authentifizierung | Muss |
 | 4.3 | Security Group `kai-entry`: eingehend TCP 3000 (Open WebUI) und TCP 4000 (LiteLLM für Harnesses) nur aus dem VPN-Bereich; sonst nichts | Muss |
-| 4.4 | Eintrag `entry.kai.internal` für `kai-entry`, damit Nutzer-Links und Harness-Konfigurationen einen Namen statt einer IP tragen | Soll |
+| 4.4 | Eintrag `webui1.unserkai.de` für `kai-entry`, damit Nutzer-Links und Harness-Konfigurationen einen Namen statt einer IP tragen | Soll |
 
 ## 5. Netz, eingehend — Zugang für Nutzer
 
 | | Anforderung | Stufe |
 |---|---|---|
 | 5.1 | Open WebUI lauscht auf `kai_webui_bind:3000`, LiteLLM auf `kai_litellm_bind:4000`. Der Weg vom Nutzer dorthin ist **Infrastruktur**: VPN (bevorzugt), oder Reverse-Proxy/Load Balancer mit TLS | Muss (eine der beiden) |
-| 5.2 | Falls VPN: Nutzer erreichen `http://entry.kai.internal:3000`, Harnesses `http://entry.kai.internal:4000/v1`. Die beiden `bind`-Variablen zeigen dann auf die VPN-seitige Adresse statt auf `127.0.0.1` | — |
+| 5.2 | Falls VPN: Nutzer erreichen `http://webui1.unserkai.de:3000`, Harnesses `http://webui1.unserkai.de:4000/v1`. Die beiden `bind`-Variablen zeigen dann auf die VPN-seitige Adresse statt auf `127.0.0.1` | — |
 | 5.3 | Falls öffentlich: HTTPS zwingend (Passwörter, Chat-Inhalte, API-Keys). Zertifikat per ALB/ACM oder Caddy auf `kai-entry`; dann kommt ein Proxy-Container in den Entry-Stack (Erweiterung, kein Umbau) | — |
 | 5.4 | **Kein** öffentlich erreichbares SSH (Beschluss Meeting 02.11.) | Muss |
 | 5.5 | Vier Nutzer, PC und Telefon (S1-09): Browser reicht, keine App | Hinweis |
@@ -93,7 +93,7 @@ Offen (Uwe legt fest): VPN-Technik, Domain `unserkai.de` ja/nein, interner DNS-N
 | 7.1 | `kai-entry` läuft durch: `t3.medium` ≈ 35 $/Monat in Frankfurt, dazu EBS (Root 30 GB + 20 GB gp3 ≈ 5 $/Monat). Alternative `t3a.medium` (AMD) etwa 10 % günstiger | Hinweis |
 | 7.2 | `kai-gpu` nur bei Bedarf: On-Demand ≈ 0,66 $/h, 100 Betriebsstunden ≈ 66 $; im Stop-Zustand nur EBS (150 GB gp3 ≈ 14 $/Monat + Root). Start/Stop zunächst von Hand (Axel oder Uwe), Automatik später ([01 §5](01_architektur.md)) | Hinweis |
 | 7.3 | Egress nach §3.1: NAT-Gateway ≈ 38 $/Monat oder zwei öffentliche IPv4 ≈ 8 $/Monat | Hinweis |
-| 7.4 | Stabile Namen (`entry.kai.internal`, `gpu.kai.internal`), damit Nutzer-Links und Harness-Konfigurationen nach Stop/Start oder Maschinenwechsel gleich bleiben | Soll |
+| 7.4 | Stabile Namen (`webui1.unserkai.de`, `kai1.unserkai.de`), damit Nutzer-Links und Harness-Konfigurationen nach Stop/Start oder Maschinenwechsel gleich bleiben | Soll |
 | 7.5 | EBS-Snapshot von `kai-data` vor der Erstinstallation und an Meilensteinen; Restore-Test einmal durchspielen (S1-11) | Soll |
 | 7.6 | Budget-Alarm in AWS (Billing Alert) auf den im Team vereinbarten Betrag | Soll |
 
@@ -102,7 +102,7 @@ Offen (Uwe legt fest): VPN-Technik, Domain `unserkai.de` ja/nein, interner DNS-N
 Erfüllt ist, was die [Bestandsaufnahme §5](instance_specs.md) so ausweist; offen bleibt:
 
 1. `kai-entry` (`webui1`): `t3.medium`, Root 30 GB, Volume `kai-data` angehängt, Axels Key bei `admin` (§1.1, §1.7, §2.1, §6.3)
-2. `kai-gpu` (`kai1`): Root 30 GB, Axels Key bei `admin` (§1.7, §6.3)
+2. `kai-gpu` (`kai1`): Root 50 GB, Axels Key bei `admin` (§1.7, §6.3)
 3. Private DNS-Namen (§4.1, §4.4)
 4. Session-Rolle mit `AWS-StartSSHSession` (§6.2); Prüfung: `ssh` über den SSM-ProxyCommand liefert eine Shell als `admin`
 5. Entscheidung zu §5 (VPN/öffentlich), damit `kai_webui_bind` und `kai_litellm_bind` gesetzt werden können; kann auch nach der Installation geändert werden

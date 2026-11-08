@@ -30,7 +30,7 @@ Harnesses (OpenCode, OpenClaw, …) ──────────────�
 │                                               │                                        │
 │  Volume /opt/kai (EBS): data/open-webui · data/litellm-db · .env                            │
 └───────────────────────────────────────────────┼────────────────────────────────────────┘
-                                                │ OpenAI-API an gpu.kai.internal:8080
+                                                │ OpenAI-API an kai1.unserkai.de:8080
                                                 │ (nur im VPC, Security Group)
 ┌───────────────────────────────────────────────▼──── kai-gpu · g4dn.xlarge · bei Bedarf an ──┐
 │                                                                                             │
@@ -61,7 +61,7 @@ später daneben, alle als weitere Einträge in LiteLLM: GPU-VM B (größer) · l
 | kai-entry | `litellm` | `ghcr.io/berriai/litellm:<version>-stable` | OpenAI-kompatibler Endpunkt für Open WebUI und Harnesses; Modellliste aus allen Backends; Routing, Fallback; virtuelle Keys, Budgets, Verbrauch pro Key | 4000 auf `kai_litellm_bind` |
 | kai-entry | `litellm-db` | `docker.io/library/postgres:17` | Datenbank für Keys, Budgets und Verbrauch von LiteLLM | nur intern |
 | kai-entry | `brave-mcp` | `docker.io/mcp/brave-search` (oder `brave/brave-search-mcp-server`), Transport `http` | Websuche als MCP-Werkzeug für Open WebUI | 8000, nur intern |
-| kai-gpu | `llama-swap` | `ghcr.io/mostlygeek/llama-swap:unified-cuda13` (enthält `llama-server`) | lädt das angefragte Modell auf die GPU, entlädt bei Wechsel | 8080 auf der VPC-Adresse |
+| kai-gpu | `llama-swap` | `ghcr.io/mostlygeek/llama-swap:unified-cuda` (CUDA 12; das CUDA-13-Image hat keinen Kernel für die T4) (enthält `llama-server`) | lädt das angefragte Modell auf die GPU, entlädt bei Wechsel | 8080 auf der VPC-Adresse |
 
 Begründungen:
 
@@ -74,7 +74,7 @@ Begründungen:
 
 - **kai-entry:** alle Container hängen in einem Compose-Netz `kai`. Host-Ports: `open-webui` auf `kai_webui_bind:3000` für die Nutzer, `litellm` auf `kai_litellm_bind:4000` für Harnesses. Beide Adressen sind die VPN-seitige Adresse der Maschine oder `127.0.0.1`, je nach Zugangsweg. `brave-mcp` und `litellm-db` sind nur aus dem Docker-Netz erreichbar.
 - **kai-gpu:** `llama-swap` veröffentlicht 8080 auf der VPC-Adresse, weil `kai-entry` es erreichen muss. llama-swap hat keine Authentifizierung, deshalb lässt die Security Group 8080 nur aus der Security Group von `kai-entry` zu, nie aus dem VPN und nie öffentlich. Die Verwaltungsendpunkte von llama-swap (`/running`, `/unload`, `/logs`, Web-UI) bleiben damit intern; für Admin-Blicke: SSM-Portweiterleitung.
-- **Adressierung:** `kai-entry` erreicht `kai-gpu` ausschließlich über den DNS-Namen in der Ansible-Variable `kai_gpu_endpoint` (Vorschlag `http://gpu.kai.internal:8080`, private Route-53-Zone von Uwe). Keine IP-Adresse im Repo, in `litellm.yaml` oder in einer Compose-Datei. Siehe §3.
+- **Adressierung:** `kai-entry` erreicht `kai-gpu` ausschließlich über den DNS-Namen in der Ansible-Variable `kai_gpu_endpoint` (Vorschlag `http://kai1.unserkai.de:8080`, private Route-53-Zone von Uwe). Keine IP-Adresse im Repo, in `litellm.yaml` oder in einer Compose-Datei. Siehe §3.
 - **Ausgehend:** Image-Registries, Hugging Face (nur `kai-gpu`), api.search.brave.com (nur `kai-entry`), Debian-Spiegel, Dockers apt-Repo, NVIDIAs CUDA-Repo (Treiber und Toolkit, nur `kai-gpu`). Liste in [02 §3](02_anforderungen-infrastruktur.md). Beide Instanzen haben heute Egress ohne Allowlist ([Bestandsaufnahme §4](instance_specs.md)).
 
 ### Daten und Persistenz
@@ -129,7 +129,7 @@ Aufwand für einen Wechsel von `kai-gpu`, sobald die Rollen aus Phase 2 stehen:
 | Schritt | Wer | Dauer |
 |---|---|---|
 | Terraform: Instanztyp oder Image ändern, Volume `kai-models` anhängen, DNS-Eintrag | Uwe | 10 bis 15 min |
-| Instanz-ID in `host_vars` eintragen, `make deploy LIMIT=kai-gpu` | Axel | 10 bis 15 min Laufzeit, davon der Großteil Treiberbau (DKMS), ein Neustart und Image-Pull |
+| Instanz-ID in `host_vars` eintragen, `make deploy LIMIT=kai1` | Axel | 10 bis 15 min Laufzeit, davon der Großteil Treiberbau (DKMS), ein Neustart und Image-Pull |
 | Erster Chat, Modell lädt, Antwortzeit prüfen | Axel | 5 min |
 | Nur wenn das Volume neu ist: Modelle laden | Axel | 3 bis 5 min pro Modell |
 

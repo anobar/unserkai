@@ -169,6 +169,23 @@ Jede Gruppe hat in `playbooks/site.yml` ihren Play; `common`, `users` und
 
 ## Kai-Rollen
 
-- `kai_volume` bindet das Datenvolume per Dateisystem-Label ein (`kai-data` unter `/opt/kai`, `kai-models` unter `/opt/kai/models`); mit `kai_volume_required: true` (AWS) legt sie auf der einzigen leeren Platte das Dateisystem an, ohne Volume (Test-VMs) bleibt der Einhängepunkt ein Verzeichnis.
+- `kai_volume` bindet das Datenvolume per Dateisystem-Label ein (`kai-data` unter `/opt/kai`, `kai-models` unter `/opt/kai/models`); mit `kai_volume_required: true` (AWS) legt sie auf der Platte, die `kai_volume_device` in den `host_vars` als Pfad unter `/dev/disk/by-id` benennt, ein XFS-Dateisystem an (nur wenn die Platte leer ist; ein vorhandenes Label mit anderem Typ bricht ab, es wird nie umformatiert, und fstab-Zeilen desselben Geräts unter anderem Einhängepunkt werden entfernt), ohne Volume (Test-VMs) bleibt der Einhängepunkt ein Verzeichnis.
 - `kai_entry` rollt `kai/compose/entry` nach `/opt/kai` aus und startet den Stack; die `.env` mit den Geheimnissen legt ein Mensch an (aus `kai/compose/entry/.env.example`, Modus 0600), die Rolle prüft sie nur und bricht sonst ab.
 - `kai_gpu` installiert auf Maschinen mit `kai_gpu_enabled: true` den NVIDIA-Treiber (Zweig `kai_gpu_driver_branch`) und das Container Toolkit, holt die Modelle mit `kai-models-pull` und startet `kai/compose/gpu`; ohne GPU läuft llama-swap über `compose.cpu.yaml` auf der CPU.
+
+## Kai: Arbeitsablauf
+
+Reihenfolge auf einer frischen Maschine (Test-VM oder AWS), jeweils mit `LIMIT=<host>`:
+
+1. `make deploy TAGS=common,users,kai_volume,docker`
+2. Auf `kai-entry`: `.env` aus `kai/compose/entry/.env.example` nach `/opt/kai/.env` kopieren, Werte eintragen, Modus 0600; `OPENWEBUI_LITELLM_KEY` bleibt leer.
+3. `make deploy` (ganz): rollt die Stacks aus und startet sie; der zweite Lauf muss `changed=0` melden.
+4. Auf `kai-entry`: `kai/bin/kai-bootstrap` richtet Open WebUI und LiteLLM ein (Konten, Verbindung, Brave-Werkzeug), danach prüft `kai/bin/kai-smoke` die ganze Kette.
+
+Weitere Regeln:
+
+- `make check` (Dry-Run) sagt nur im bereits ausgerollten Zustand etwas Sinnvolles: auf einer frischen Maschine bricht er an der ersten Abhängigkeit ab (Repo-Schlüssel, Pakete); nach dem ersten Deployment meldet er jede Abweichung als `changed`.
+- `make deploy` stellt nach Abweichungen (geänderte Datei, falsche Rechte, gestoppter Container) den Sollzustand wieder her; die Verzeichnisse der Container-Daten (`/opt/kai/data/*`) fasst die Rolle nicht an, denn Besitzer und Rechte setzen die Container selbst.
+- Die Test-VMs beginnen nach jedem Stopp wieder frisch; `make ping|check|deploy` beachten `LIMIT=kai-entry-pre,kai-gpu-pre`, damit die AWS-Hosts (noch ohne Instanz-ID) nicht angesprochen werden.
+- Private Werte der Test-VMs (Proxy, Adressen) stehen nur im gitignorierten Overlay `inventory/local/`.
+- Rollen, die Geheimnisse berühren, gibt es nicht: `.env` und `accounts.txt` auf `kai-entry` (beide 0600) gehören den Menschen und `kai-bootstrap`.

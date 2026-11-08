@@ -54,3 +54,14 @@
     owner: root
     group: root
     mode: "0644"
+
+# Namen, die noch kein DNS aufloest (Overlay inventory/local/); leer = nichts eintragen.
+- name: Zusaetzliche Hosts-Eintraege setzen
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} kai_extra_hosts"
+    block: |
+      {% for name, ip in kai_extra_hosts.items() %}
+      {{ ip }} {{ name }}
+      {% endfor %}
+  when: kai_extra_hosts | default({}) | length > 0

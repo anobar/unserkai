@@ -2,7 +2,7 @@
 # Rolle kai_gpu: Treiber und llama.cpp-Stack ausrollen.
 
 - name: NVIDIA-Treiber einrichten
-  when: kai_gpu_enabled | bool
+  when: kai_gpu_driver_install | bool
   block:
     - name: Vorhandensein der Debian-Apt-Sources pruefen
       ansible.builtin.stat:
@@ -28,10 +28,10 @@
       ansible.builtin.apt:
         deb: /var/tmp/cuda-keyring_1.1-1_all.deb
 
+    # Ohne cache_valid_time: ein frischer Cache kennt das gerade eingetragene CUDA-Repo noch nicht.
     - name: Apt-Cache aktualisieren
       ansible.builtin.apt:
         update_cache: true
-        cache_valid_time: 3600
 
     - name: Kernel-Header installieren
       ansible.builtin.apt:
@@ -65,6 +65,8 @@
         cmd: nvidia-smi -L
       register: kai_gpu_smi
       changed_when: false
+      check_mode: false
+      when: kai_gpu_enabled | bool
       failed_when: kai_gpu_smi.rc != 0
       retries: 5
       delay: 10
@@ -152,14 +154,18 @@
   changed_when: "'pulled:' in kai_gpu_pull.stdout"
   environment: "{{ docker_proxy_env | default({}) }}"
 
+- name: Platz fuer fehlende Images pruefen
+  ansible.builtin.include_role:
+    name: docker
+    tasks_from: compose_space
+  vars:
+    docker_compose_args: "{{ kai_gpu_compose_args }}"
+    docker_min_free_gb: "{{ kai_gpu_min_free_gb }}"
+
 - name: Stack starten
   ansible.builtin.command:
     cmd: >-
-      docker compose --project-directory "{{ kai_gpu_install_dir }}"
-      --env-file "{{ kai_gpu_install_dir }}/stack.env"
-      -f "{{ kai_gpu_install_dir }}/compose.yaml"
-      {{ '' if kai_gpu_enabled | bool else
-        ' -f ' ~ kai_gpu_install_dir ~ '/compose.cpu.yaml' }}
+      docker compose {{ kai_gpu_compose_args }}
       up -d --wait --wait-timeout {{ kai_gpu_wait_timeout }}
       --quiet-pull
   register: kai_gpu_up
@@ -168,11 +174,18 @@
     'Recreated' in kai_gpu_up.stderr or
     'Created' in kai_gpu_up.stderr
 
+- name: Alte Images entfernen
+  ansible.builtin.include_role:
+    name: docker
+    tasks_from: compose_prune
+  when: kai_gpu_up is changed
+
 - name: Modellkatalog abfragen
   ansible.builtin.uri:
     url: "http://127.0.0.1:{{ kai_gpu_port }}/v1/models"
     return_content: true
   register: kai_gpu_models_response
+  check_mode: false
   retries: 12
   delay: 5
   until: kai_gpu_models_response.status == 200
