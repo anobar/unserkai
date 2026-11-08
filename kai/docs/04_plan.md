@@ -94,6 +94,8 @@ Voraussetzung: Punkte aus [02 §8](02_anforderungen-infrastruktur.md) erfüllt, 
 3. Egress: heute offen ohne Allowlist; auf die Ziele in [02 §3](02_anforderungen-infrastruktur.md) einschränken oder offen lassen
 4. Session-Rolle um `AWS-StartSSHSession` erweitern; Axels Key bei `admin` auf beiden Maschinen ([02 §6](02_anforderungen-infrastruktur.md))
 5. Private DNS-Zone `kai.internal` mit `entry` und `gpu`; Security Groups per Gruppenreferenz ([02 §4](02_anforderungen-infrastruktur.md))
-6. `kai-gpu` (`kai1`): Root 30 GB ([02 §1.7](02_anforderungen-infrastruktur.md))
+6. `kai-gpu` (`kai1`): Root von 30 auf 50 GB; 30 GB liefen beim Wechsel des CUDA-Images voll ([02 §1.7](02_anforderungen-infrastruktur.md))
 7. Budget-Grenze für Betriebsstunden von `kai-gpu` und den Dauerbetrieb von `kai-entry` (S1-03)
 8. Datenschutz-Regeln für den Prototyp festhalten (S1-04): wer ist Admin in Open WebUI, Aufbewahrung von Chats, ob und wann externe Modelle über LiteLLM freigegeben werden
+9. Konten-Datenbank verschlüsseln: Postgres von Open WebUI auf `kai-data` (EBS-Verschlüsselung) und `/opt/kai/accounts.txt`, das die Startpasswörter heute unverschlüsselt (0600, nur root) hält; für den Start so akzeptiert
+10. Auto-Stop von `kai1` nach Leerlauf und nächtlicher Stopp: Vorschlag in [05](05_vorschlag-auto-stop.md)

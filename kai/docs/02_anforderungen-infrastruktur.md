@@ -14,7 +14,7 @@ Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ bl
 | 1.4 | **Treiber `kai-gpu`:** keiner im Image; die Rolle `kai_gpu` installiert ihn wie auf Axels GPU-Rechner aus NVIDIAs CUDA-Repo für Debian 13 (`cuda-keyring`, Header `linux-headers-cloud-amd64` zum laufenden Kernel, `nvidia-driver-cuda` mit dem Open-Kernel-Modul `nvidia-kernel-open-dkms`, `nvidia-container-toolkit` aus demselben Repo) im Zweig 620, dem Long Term Support Branch bis 09/2029, festgehalten mit `nvidia-driver-pinning-620`; Debians eigener Treiber (550) ist für das `cuda13`-Image von llama-swap zu alt (braucht ≥ 580). Für Uwe nichts zu tun | gesetzt |
 | 1.5 | Standard-Benutzer `admin` mit sudo ohne Passwort auf beiden Maschinen (Standard des Debian-Images), erreichbar für Ansible (siehe §6) | Muss |
 | 1.6 | Tags `Name=kai-entry` bzw. `Name=kai-gpu` und `kai:role=entry` bzw. `kai:role=gpu` (für ein späteres dynamisches Inventar) | Soll |
-| 1.7 | Root-Volume `kai-entry` von 20 auf 30 GB (Images ~6 GB; Debian vergrößert das Root-Dateisystem beim Start selbst), `kai-gpu` ebenfalls 30 GB (Treiber mit Kernel-Headern, Docker, CUDA-Image ~5 GB); Root enthält nur OS, Treiber und Images. Bleibt Root bei 20 GB, legt die Rolle Dockers `data-root` auf das Volume `kai-data` | Soll |
+| 1.7 | Root-Volume `kai-entry` von 20 auf 30 GB (Images ~6 GB; Debian vergrößert das Root-Dateisystem beim Start selbst), `kai-gpu` 50 GB (Treiber mit Kernel-Headern, Docker, CUDA-Image `unified-cuda`, im Betrieb 17 von 30 GB belegt; beim Image-Wechsel liegen altes und neues Image samt Entpack-Puffer gleichzeitig auf der Platte, und 30 GB liefen dabei am 07.11.2026 voll); Root enthält nur OS, Treiber und Images. Bleibt Root bei 20 GB, legt die Rolle Dockers `data-root` auf das Volume `kai-data` | Soll |
 
 ## 2. Platten
 
@@ -102,7 +102,7 @@ Offen (Uwe legt fest): VPN-Technik, Domain `unserkai.de` ja/nein, interner DNS-N
 Erfüllt ist, was die [Bestandsaufnahme §5](instance_specs.md) so ausweist; offen bleibt:
 
 1. `kai-entry` (`webui1`): `t3.medium`, Root 30 GB, Volume `kai-data` angehängt, Axels Key bei `admin` (§1.1, §1.7, §2.1, §6.3)
-2. `kai-gpu` (`kai1`): Root 30 GB, Axels Key bei `admin` (§1.7, §6.3)
+2. `kai-gpu` (`kai1`): Root 50 GB, Axels Key bei `admin` (§1.7, §6.3)
 3. Private DNS-Namen (§4.1, §4.4)
 4. Session-Rolle mit `AWS-StartSSHSession` (§6.2); Prüfung: `ssh` über den SSM-ProxyCommand liefert eine Shell als `admin`
 5. Entscheidung zu §5 (VPN/öffentlich), damit `kai_webui_bind` und `kai_litellm_bind` gesetzt werden können; kann auch nach der Installation geändert werden
