@@ -181,14 +181,16 @@ Der Pförtner meldet in `/status` eine Phase und einen Prozentwert. Die Prozentw
 | Start angefragt | `StartInstances` abgeschickt | 0–10 % | wenige s |
 | Maschine läuft, bootet | AWS meldet `running` | 10–35 % | ≈ 45 s |
 | Dienst startet | llama-swap antwortet auf `/health` | 35–50 % | ≈ 20 s |
-| Modell wird geladen | llama-swap meldet das Standardmodell noch nicht als geladen (`/running` bzw. Health des Modells) | 50–95 % | ≈ 100 s, später kürzer ([Abschnitt 7](#7-schneller-starten)) |
-| Bereit | Standardmodell geladen | 100 % | – |
+| Modell wird geladen | llama-swap meldet das gewünschte Modell noch nicht als geladen (`/running` bzw. Health des Modells) | 50–95 % | ≈ 100 s, später kürzer ([Abschnitt 7](#7-schneller-starten)) |
+| Bereit | gewünschtes Modell geladen | 100 % | – |
 
 In Open WebUI erscheint das als Statuszeile über der entstehenden Antwort, etwa:
 
 ```
 ⟳ kai1 startet · Modell wird geladen · ▰▰▰▰▰▰▱▱▱▱ 60 % · noch etwa 40 s
 ```
+
+**Welches Modell geladen wird, bestimmt der Pförtner, nicht ein starres Preload.** llama-swap hält auf der einen GPU genau ein Modell (16 GB Grafikspeicher, ein Modell braucht 12–13 GB). Würde llama-swap beim Start immer Modell A vorladen und die erste Anfrage will Modell B, müsste B warten, bis A fertig geladen ist, dann A entladen und B laden: zweimal ≈ 100 s für ein Modell, das niemand benutzt. Darum stößt der Pförtner das Laden selbst an, sobald llama-swap antwortet: beim Pflichtstart das Modell aus der Anfrage, beim Frühstart (nur die Anmeldung ist bekannt) das Standardmodell. So wird genau einmal geladen. Einzige Ausnahme: Nach einem Frühstart kommt eine Anfrage nach B, während das Standardmodell A noch lädt; dann bleibt der Wechsel A → B. Das trifft nur Nicht-Standard-Modelle und ist der Preis des Frühstarts.
 
 Sobald die Maschine bereit ist, schließt der Filter die Statuszeile („kai1 bereit“) und die Antwort beginnt wie gewohnt. Die Technik dahinter ist die Statusmeldung, die Open WebUI für Filter vorsieht (`__event_emitter__`, Typ `status`); sie zeigt eine Zeile mit Text, keinen Balken, darum zeichnet der Filter den Balken mit Zeichen.
 
@@ -205,7 +207,7 @@ Jeder Start und jeder Stopp landet mit Grund im Journal von `webui1` (`request`,
 
 ## 5. Stoppen
 
-Es gilt ein einziges Kriterium: **Zeit seit der letzten Anfrage.** Ob und welches Modell geladen ist, spielt keine Rolle; auf `kai1` ist immer ein Modell geladen, nach dem Boot das Standardmodell (llama-swap lädt es beim Start vor und entlädt nie, `ttl: 0`), später das zuletzt benutzte.
+Es gilt ein einziges Kriterium: **Zeit seit der letzten Anfrage.** Ob und welches Modell geladen ist, spielt keine Rolle; auf `kai1` ist immer ein Modell geladen: nach dem Start das angeforderte oder das Standardmodell (der Pförtner lässt es laden, llama-swap entlädt nie, `ttl: 0`), später das zuletzt benutzte.
 
 ```mermaid
 flowchart TD
@@ -255,7 +257,7 @@ Warum der Stopper im Pförtner sitzt und nicht auf `kai1` selbst: Der Pförtner 
 
 | Maßnahme | Wirkung | Kosten |
 |---|---|---|
-| Preload ausrollen (`kai_gpu_preload`, im Repo fertig) | Modell lädt ab Boot statt ab erster Anfrage; Voraussetzung dafür, dass der Frühstart wirkt | keine |
+| Laden ab Boot (durch den Pförtner, siehe [4.4](#44-fortschrittsanzeige); das starre `kai_gpu_preload` entfällt) | Modell lädt, sobald llama-swap läuft, statt ab erster Anfrage; Voraussetzung dafür, dass der Frühstart wirkt | keine |
 | gp3-Durchsatz von `kai-models` auf ≈ 400 MiB/s (mehr kann die g4dn.xlarge nicht) | Modell ≈ 30 s statt ≈ 100 s | ≈ 15 $/Monat; 250 MiB/s: ≈ 50 s für ≈ 6 $/Monat; ohne Ausfall änderbar |
 | `apt-daily` und `unattended-upgrades` nach dem Boot verzögern | wenige s; sie teilen die Plattengeschwindigkeit mit dem Modell | keine |
 
@@ -267,8 +269,8 @@ Erwartung mit Pförtner, Frühstart und schnellerer Platte: Wer sich anmeldet un
 
 | Nr. | Seite | Was | Fertig, wenn |
 |---|---|---|---|
-| 1 | AWS, Terraform (`aws/`) | Instanzrolle von `webui1` darf `ec2:StartInstances` und `ec2:StopInstances` auf Instanzen mit Tag `kai-pfoertner = managed` und `ec2:DescribeInstances` lesen; `kai1` bekommt das Tag; CloudWatch-Alarm als Sicherheitsnetz | `aws ec2 start-instances` von `webui1` aus klappt für `kai1` und wird für andere Instanzen abgelehnt |
-| 2 | `kai1`, Rolle `kai_gpu` | Preload einschalten; sonst nichts (llama-swap startet schon mit der Maschine) | Nach einem Kaltstart ist das Standardmodell ohne Anfrage geladen |
+| 1 | AWS, Terraform (`aws/`) | Instanzrolle von `webui1` darf `ec2:StartInstances` und `ec2:StopInstances` auf Instanzen mit Tag `kai-pfoertner = managed` und `ec2:DescribeInstances` lesen; `kai1` bekommt das Tag; CloudWatch-Alarm als Sicherheitsnetz; Berechtigungen und Terraform-Code in [07](07_aws-berechtigungen-pfoertner.md) | `aws ec2 start-instances` von `webui1` aus klappt für `kai1` und wird für andere Instanzen abgelehnt |
+| 2 | `kai1`, Rolle `kai_gpu` | `kai_gpu_preload` auf `[]` setzen, das Laden übernimmt der Pförtner; sonst nichts (llama-swap startet schon mit der Maschine) | Nach einem Kaltstart über den Pförtner ist genau ein Modell geladen, das angeforderte |
 | 3 | `webui1`, neue Rolle `kai_pfoertner` | Pförtner als systemd-Dienst, Konfiguration aus dem Inventory, Journal-Einträge; LiteLLM-`api_base` auf den Pförtner, Timeout 600 s; auf den Test-VMs im Heimnetz läuft er im Trockenmodus (`provider: none`: Start und Stopp nur als Logzeile, Gegenstelle gilt als an) | Test-VM zweimal durchgelaufen, zweiter Lauf `changed=0`; `kai-smoke` grün; aus Open WebUI startet eine Frage die gestoppte `kai1`, die Antwort kommt innerhalb von 3 min; zwei gleichzeitige erste Fragen starten nur einmal |
 | 4 | `webui1`, Rolle `kai_pfoertner` | Stopper mit Leerlaufzeit, Mindestlaufzeit, Haltesperre | Nach N min ohne Anfrage zeigt das Journal den Stopp und AWS `stopped`; eine Haltesperre verhindert ihn |
 | 5 | Open WebUI | Filter „Kai-Status“ (Statuszeile mit Fortschritt), eingespielt per `kai-bootstrap` | Statuszeile erscheint beim Kaltstart und schließt sich bei Bereitschaft |
