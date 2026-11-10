@@ -5,7 +5,7 @@ Stand: 10.11.2026, Konzept, nicht umgesetzt. Die AWS-Seite (Terraform) und die A
 ## Kurzfassung
 
 - `kai1` (die GPU-Maschine) kostet nur, während sie läuft. Heute startet und stoppt sie ein Mensch mit gültiger AWS-Sitzung.
-- Neu übernimmt das ein kleiner Dienst auf `webui1`, der **Pförtner** (`kai_pfoertner`): Jede Anfrage an ein GPU-Modell geht durch ihn hindurch. Ist die Maschine aus, startet er sie, hält die Anfrage so lange fest und reicht sie dann weiter. Sieht er eine Weile keine Anfrage mehr, stoppt er die Maschine.
+- Neu übernimmt das ein kleiner Dienst auf `webui1`, der **Pförtner** (`kai-pfoertner`): Jede Anfrage an ein GPU-Modell geht durch ihn hindurch. Ist die Maschine aus, startet er sie, hält die Anfrage so lange fest und reicht sie dann weiter. Sieht er eine Weile keine Anfrage mehr, stoppt er die Maschine.
 - Wer in Open WebUI chattet, sieht während des Starts eine Statuszeile mit Fortschritt („kai1 startet · Modell wird geladen · 60 % · noch etwa 40 s“) statt eines stummen Wartens.
 - Auf `kai1` ist immer ein Modell geladen, mindestens das Standardmodell. „Kein Modell geladen“ ist deshalb kein Grund zum Stoppen; es zählt allein die Zeit seit der letzten Anfrage.
 - Der Pförtner kennt mehrere Maschinen. Welche Maschine ein Modell braucht, entscheidet wie bisher LiteLLM; der Pförtner startet die Maschine, an die LiteLLM die Anfrage schickt.
@@ -45,7 +45,7 @@ gantt
 - **EC2-Hibernation scheidet aus:** AWS unterstützt sie für keine G-Familie und nicht für Debian ([Voraussetzungen](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/hibernating-prerequisites.html)); sie sichert ohnehin nur den Arbeitsspeicher, nicht den Grafikspeicher.
 - Engpass ist die Lesegeschwindigkeit der EBS-Platte: die g4dn.xlarge schafft 118,75 MB/s dauerhaft und 437,5 MB/s als Burst (30 min je 24 h), gp3 liefert ohne Aufpreis 125 MB/s. Wie das zu verkürzen ist, steht in [Abschnitt 7](#7-schneller-starten).
 
-## 3. Zielbild: der Pförtner `kai_pfoertner`
+## 3. Zielbild: der Pförtner `kai-pfoertner`
 
 ```mermaid
 flowchart LR
@@ -55,7 +55,7 @@ flowchart LR
     OWUI["Open WebUI<br/>+ Filter „Kai-Status“"]
     LOG["Log von Open WebUI"]
     LL["LiteLLM<br/>Konten, Routing Modell → Maschine"]
-    GATE["kai_pfoertner — der Pförtner<br/>startet, hält fest, reicht weiter, stoppt"]
+    GATE["kai-pfoertner — der Pförtner<br/>startet, hält fest, reicht weiter, stoppt"]
   end
   subgraph kai1["kai1 — GPU, bei Bedarf an"]
     LS1["llama-swap<br/>Standardmodell immer geladen"]
@@ -75,7 +75,7 @@ flowchart LR
 
 Was der Pförtner ist:
 
-- Ein kleines Programm (Python, nur Debian-Pakete) als systemd-Dienst direkt auf `webui1`, nicht im Container. Grund: Nur die Maschine selbst bekommt von AWS die Zugangsdaten ihrer Instanzrolle; Container bekommen sie nicht. Er lauscht nur auf dem internen Docker-Netz von `webui1`, von außen ist kein neuer Port offen. Rolle, Dienst und Programm heißen `kai_pfoertner`; im Netz heißt er `kai-pfoertner`, weil Rechnernamen keinen Unterstrich erlauben.
+- Ein kleines Programm (Python, nur Debian-Pakete) als systemd-Dienst direkt auf `webui1`, nicht im Container. Grund: Nur die Maschine selbst bekommt von AWS die Zugangsdaten ihrer Instanzrolle; Container bekommen sie nicht. Er lauscht nur auf dem internen Docker-Netz von `webui1`, von außen ist kein neuer Port offen. Dienst, Programm, Befehl, Rechnername und AWS-Tag heißen `kai-pfoertner`; nur die Ansible-Rolle und ihre Variablen heißen `kai_pfoertner` und `kai_pfoertner_*`, weil Ansible dort keinen Bindestrich erlaubt (wie `kai_entry` für `kai-entry`).
 - LiteLLM schickt Anfragen an GPU-Modelle nicht mehr direkt an `kai1:8080`, sondern an `kai-pfoertner:8081/kai1/v1/…`. Der Pfadanfang (`/kai1/`) sagt dem Pförtner, welche Maschine gemeint ist; er leitet an `kai1.unserkai.de:8080/v1/…` weiter. Eine zweite Maschine bekommt `/kai2/`.
 - Je Maschine kennt er: Instanz-ID, Adresse, Leerlaufzeit, Mindestlaufzeit, ob sie beim Frühstart mitstartet. Keine Geheimnisse, keine AWS-Schlüssel; die Rechte kommen aus der Instanzrolle von `webui1` (siehe [Abschnitt 8](#8-was-wo-zu-bauen-ist)).
 
@@ -124,7 +124,7 @@ sequenceDiagram
   actor N as Benutzer
   participant F as Open WebUI mit Filter
   participant L as LiteLLM
-  participant G as kai_pfoertner
+  participant G as kai-pfoertner
   participant A as AWS EC2
   participant K as kai1 (llama-swap)
   N->>F: Frage an ein kai1-Modell
@@ -225,7 +225,7 @@ flowchart TD
 - **Leerlaufzeit N:** Vorschlag 30 min. 30 min Leerlauf kosten ≈ 0,33 $; ein Kaltstart kostet jeden Wartenden ≈ 3 min. Sehr kurze Werte sparen wenig und ärgern viel.
 - **Mindestlaufzeit:** Vorschlag 10 min ab Start. Sonst würde ein Frühstart ohne folgende Anfrage sofort wieder gestoppt.
 - **Anfrage in Arbeit:** Eine Antwort, die noch streamt, zählt als Anfrage in Arbeit; der Zeitstempel wird erst am Ende gesetzt.
-- **Haltesperre:** Für Arbeiten, die der Pförtner nicht sieht (SSH-Tunnel direkt nach `kai1`, Modelle nachladen): `kai_pfoertner hold kai1 120` auf `webui1` oder `POST /hold/kai1?minutes=120`.
+- **Haltesperre:** Für Arbeiten, die der Pförtner nicht sieht (SSH-Tunnel direkt nach `kai1`, Modelle nachladen): `kai-pfoertner hold kai1 120` auf `webui1` oder `POST /hold/kai1?minutes=120`.
 - **Konfiguration je Maschine** in den Ansible-Variablen: `idle_minutes: 30`, `min_runtime_minutes: 10`, `wake_on_login: true`. `idle_minutes: 0` heißt „nie stoppen“. Das ersetzt den früheren Vorschlag eines Schalters `kai_gpu_idle_stop`; gemeint war damit nur eine Ansible-Variable, die den Stopper auf den Test-VMs im Heimnetz aus- und auf `kai1` einschaltet.
 - **Sicherheitsnetz außerhalb der Maschine:** ein CloudWatch-Alarm (AWS-eigene Überwachung) mit der Aktion „Stop“, wenn die CPU von `kai1` 90 min lang unter 5 % bleibt. Er greift nur, wenn der Pförtner ausgefallen ist oder hängt; im Normalfall hat der Pförtner längst gestoppt. Kosten ≈ 0,10 $/Monat. Ein nächtlicher Zwangsstopp (02:00 Uhr) wäre die gröbere Alternative.
 
@@ -248,7 +248,7 @@ Warum der Stopper im Pförtner sitzt und nicht auf `kai1` selbst: Der Pförtner 
 - LiteLLM bleibt die einzige Stelle, die entscheidet, welches Modell auf welcher Maschine läuft (`model_list`). Dort zeigt `api_base` je Modell auf `http://kai-pfoertner:8081/<maschine>/v1`.
 - Der Pförtner hat eine Tabelle je Maschine (Instanz-ID, Adresse, Leerlaufzeit, Mindestlaufzeit, Frühstart). Ansible erzeugt beide, LiteLLM-Konfiguration und Pförtner-Tabelle, aus derselben Inventory-Variable, damit sie nicht auseinanderlaufen.
 - Jede Maschine hat ihren eigenen Zustand, Start, Stopp und Zeitstempel. Eine Anfrage an ein Modell von `kai2` startet nur `kai2`.
-- Die AWS-Berechtigung von `webui1` gilt für alle Instanzen mit einem Tag (etwa `kai_pfoertner = managed`), nicht für eine feste Liste; eine neue Maschine braucht nur das Tag.
+- Die AWS-Berechtigung von `webui1` gilt für alle Instanzen mit einem Tag (etwa `kai-pfoertner = managed`), nicht für eine feste Liste; eine neue Maschine braucht nur das Tag.
 - Der Filter in Open WebUI ist maschinenunabhängig: Er fragt den Pförtner, zu welcher Maschine das gewählte Modell gehört.
 
 ## 7. Schneller starten
@@ -267,7 +267,7 @@ Erwartung mit Pförtner, Frühstart und schnellerer Platte: Wer sich anmeldet un
 
 | Nr. | Seite | Was | Fertig, wenn |
 |---|---|---|---|
-| 1 | AWS, Terraform (`aws/`) | Instanzrolle von `webui1` darf `ec2:StartInstances` und `ec2:StopInstances` auf Instanzen mit Tag `kai_pfoertner = managed` und `ec2:DescribeInstances` lesen; `kai1` bekommt das Tag; CloudWatch-Alarm als Sicherheitsnetz | `aws ec2 start-instances` von `webui1` aus klappt für `kai1` und wird für andere Instanzen abgelehnt |
+| 1 | AWS, Terraform (`aws/`) | Instanzrolle von `webui1` darf `ec2:StartInstances` und `ec2:StopInstances` auf Instanzen mit Tag `kai-pfoertner = managed` und `ec2:DescribeInstances` lesen; `kai1` bekommt das Tag; CloudWatch-Alarm als Sicherheitsnetz | `aws ec2 start-instances` von `webui1` aus klappt für `kai1` und wird für andere Instanzen abgelehnt |
 | 2 | `kai1`, Rolle `kai_gpu` | Preload einschalten; sonst nichts (llama-swap startet schon mit der Maschine) | Nach einem Kaltstart ist das Standardmodell ohne Anfrage geladen |
 | 3 | `webui1`, neue Rolle `kai_pfoertner` | Pförtner als systemd-Dienst, Konfiguration aus dem Inventory, Journal-Einträge; LiteLLM-`api_base` auf den Pförtner, Timeout 600 s; auf den Test-VMs im Heimnetz läuft er im Trockenmodus (`provider: none`: Start und Stopp nur als Logzeile, Gegenstelle gilt als an) | Test-VM zweimal durchgelaufen, zweiter Lauf `changed=0`; `kai-smoke` grün; aus Open WebUI startet eine Frage die gestoppte `kai1`, die Antwort kommt innerhalb von 3 min; zwei gleichzeitige erste Fragen starten nur einmal |
 | 4 | `webui1`, Rolle `kai_pfoertner` | Stopper mit Leerlaufzeit, Mindestlaufzeit, Haltesperre | Nach N min ohne Anfrage zeigt das Journal den Stopp und AWS `stopped`; eine Haltesperre verhindert ihn |
