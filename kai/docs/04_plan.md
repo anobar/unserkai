@@ -5,7 +5,6 @@ Stand: 2026-11-10 · Bezug: Sprint 01 in ClickUp (S1-xx), [01 Architektur](01_ar
 ## Stand
 
 - Phase 1 und 2 sind abgeschlossen, und Kai 1.0 läuft seit 07.11. auf `webui1` und `kai1` (PR #14 im Fork, Protokoll dort).
-- Alle Kai-PRs (#14–#16) sind nur in Axels Fork `anobar/unserkai` gemergt; Uwes Repo `uwebartels/unserkai` enthält `kai/` und `ansible/` noch nicht.
 - Auf `main` steht ein Stand, der auf `webui1` und `kai1` noch nicht ausgerollt ist: die Lehren aus dem Deployment (7720180, auf den Test-VMs geprüft), siehe 3.12.
 - Offen in Phase 3 sind 3.6–3.8 und 3.11, dazu 3.12 und 3.13; die Ergebnisse von 3.5 sind unvollständig belegt.
 - Danach folgt Phase 4, der Pförtner.
@@ -65,7 +64,7 @@ Alles wird in `kai-dev` entwickelt und geprüft, Rollen und Stacks laufen gegen 
 | 2.10 | **Inventory nach Rolle**: Gruppen `kai_entry` (Hosts `kai-entry`, `kai-entry-pre`) und `kai_gpu` (Hosts `kai-gpu`, `kai-gpu-pre`); Benutzerliste nach `group_vars/all.yml`; Stack-Variablen in `group_vars/kai_entry.yml` und `kai_gpu.yml`; `host_vars/kai-entry.yml` und `kai-gpu.yml` nur mit Instanz-ID, `ansible_ssh_common_args` (`ProxyCommand aws ssm start-session … --document-name AWS-StartSSHSession`), Benutzer `admin` und Maschinendaten (VRAM, Modellliste, Kontext); `host_vars/kai-entry-pre.yml` und `kai-gpu-pre.yml` nur mit `ansible_user` und `kai_gpu_enabled: false` (`kai_gpu_endpoint` bleibt der Gruppenwert); private Werte der Test-VMs (`kai_http_proxy`, `kai_extra_hosts`) in einem zweiten, gitignorierten Inventory `ansible/inventory/local/`, das das Makefile als weiteres `-i` anhängt, wenn es existiert; Host `unserkai` entfällt; `playbooks/site.yml` mit je einem Play pro Gruppe | `make syntax`; `make ping` gegen `kai-entry-pre` und `kai-gpu-pre` (SSH); SSM-Weg erst in Phase 3 |
 | 2.11 | **Doku**: `ansible/README.md` um Kai erweitern; `kai/README.md` Kurzanleitung für Nutzer (S1-12) | Review |
 
-Abnahme Phase 2: `./check` grün, beide Stacks auf frischen Test-VMs zweimal durchgelaufen (zweiter Lauf `changed=0`), Kette mit Testmodell antwortet, PR gemergt, Uwe hat die Rollen gelesen. Erfüllt bis auf zwei Punkte: Die PRs sind nur im Fork gemergt, und ob Uwe die Rollen gelesen hat, ist nicht festgehalten.
+Abnahme Phase 2: `./check` grün, beide Stacks auf frischen Test-VMs zweimal durchgelaufen (zweiter Lauf `changed=0`), Kette mit Testmodell antwortet, PR gemergt, Uwe hat die Rollen gelesen. Erfüllt bis auf einen Punkt: Ob Uwe die Rollen gelesen hat, ist nicht festgehalten.
 
 ## Phase 3 — Umsetzung auf den Maschinen
 
@@ -80,10 +79,10 @@ Voraussetzung: Punkte aus [02 §8](02_anforderungen-infrastruktur.md) erfüllt, 
 | 3.5 | Vier Konten anlegen, erstes Konto = Admin, Brave-MCP als Werkzeug registrieren, `ENABLE_SIGNUP=false`; in LiteLLM ein Key für Open WebUI, Keys für Harnesses erst bei Bedarf | Screenshot (S1-07) | Admin-Konto, LiteLLM-Key, Brave-Werkzeug und geschlossene Registrierung per `kai-bootstrap` erledigt 07.11.; die drei weiteren Konten und der Screenshot sind nicht belegt |
 | 3.6 | Modell-Plausibilitätstest (10 deutsche Fragen + 2 Suchaufrufe), FP16-Risiko aus [03](03_modellvorschlag.md) | Tabelle in ClickUp | offen |
 | 3.7 | Snapshot „nach Installation“ von `kai-data`; Stop/Start-Test `kai-gpu`: bei gestoppter GPU-Maschine bleibt Open WebUI nutzbar und meldet das Modell als nicht erreichbar; nach dem Start antwortet der Chat ohne Eingriff auf `kai-entry` | Protokoll (S1-11) | offen |
-| 3.8 | Übergabe an Uwe: Zugangsweg für Nutzer freischalten, vier Personen testen PC + Telefon (S1-09), vier parallele Anfragen messen (S1-10) | Messwerte in ClickUp | offen; Client VPN steht in Uwes Terraform (`aws/vpn/`, TCP, SAML), ist aber noch nicht in Betrieb |
-| 3.10 | Installationsprotokoll + Abweichungen zurück in die Rollen (S1-15), PR | gemergt | im Fork gemergt (7720180, PR #14); Übernahme in Uwes Repo offen |
+| 3.8 | Übergabe an Uwe: Zugangsweg für Nutzer freischalten, vier Personen testen PC + Telefon (S1-09), vier parallele Anfragen messen (S1-10) | Messwerte in ClickUp | Zugangsweg erledigt: Client VPN in Betrieb (`aws/vpn/`, TCP, SAML); Tests durch vier Personen und Messung offen |
+| 3.10 | Installationsprotokoll + Abweichungen zurück in die Rollen (S1-15), PR | gemergt | erledigt (7720180, PR #14) |
 | 3.11 | **Wechsel-Probe (Kann):** `kai-gpu` einmal durch eine neue Instanz aus demselben Image ersetzen, Volume `kai-models` umhängen, DNS nachziehen, `make deploy LIMIT=kai1` | Dauer gemessen gegen die Tabelle in [01 §3](01_architektur.md); Abweichungen in die Rollen | offen |
-| 3.12 | **Stand von `main` ausrollen:** `make check`, dann `make deploy LIMIT=webui1` und `make deploy LIMIT=kai1`; neue Stücke: Platzprüfung und Aufräumen der Images, Modell vorladen, `kai_extra_hosts` | zweiter Lauf `changed=0`; `kai-smoke --target entry` und `--target gpu` grün | offen; Root von `kai1` steht in Terraform weiter auf 30 GB (offener Punkt 4) |
+| 3.12 | **Stand von `main` ausrollen:** `make check`, dann `make deploy LIMIT=webui1` und `make deploy LIMIT=kai1`; neue Stücke: Platzprüfung und Aufräumen der Images, Modell vorladen, `kai_extra_hosts` | zweiter Lauf `changed=0`; `kai-smoke --target entry` und `--target gpu` grün | offen; Root von `kai1` steht in Terraform weiter auf 30 GB (offener Punkt 3) |
 | 3.13 | **`kai-bootstrap` ohne Passwortdatei:** Startpasswörter einmal anzeigen, beim zweiten Lauf `KAI_ADMIN_PASSWORD` oder eine Abfrage; zuerst auf `kai-entry-pre` testen, dann nach `/usr/local/sbin` auf `webui1` kopieren; erst wenn das Admin-Passwort in der KeePass liegt, `/opt/kai/accounts.txt` löschen | auf `kai-entry-pre` zweimal gelaufen, beim zweiten nichts geändert; auf `webui1` gibt es kein `accounts.txt` mehr | Code liegt im Branch `kai-05-pfoertner` (PR #17), ist weder gemergt noch getestet noch ausgerollt |
 
 ## Phase 4 — Pförtner: `kai1` bei Bedarf starten, nach Leerlauf stoppen
@@ -103,11 +102,10 @@ Das Konzept steht in [05](05_vorschlag-auto-stop.md) (Fassung in PR #17). Die En
 
 ## Offene Punkte (Entscheidung Uwe / Team)
 
-1. Zugangsweg Nutzer: Uwe baut das Client VPN (`aws/vpn/`, seit 10.11. über TCP). Axels Konto steht nicht mehr im IAM Identity Center ([02 §5](02_anforderungen-infrastruktur.md)).
-2. Egress: heute offen ohne Allowlist; auf die Ziele in [02 §3](02_anforderungen-infrastruktur.md) einschränken oder offen lassen.
-3. Private DNS-Zone `unserkai.de` mit `webui1` und `kai1` (heute ersetzt durch `kai_extra_hosts`); Security Groups per Gruppenreferenz ([02 §4](02_anforderungen-infrastruktur.md)).
-4. `kai-gpu` (`kai1`): Root von 30 auf 50 GB, beantragt; Terraform steht weiter auf 30 GB, und 30 GB liefen beim Wechsel des CUDA-Images voll ([02 §1.7](02_anforderungen-infrastruktur.md)).
-5. Budget-Grenze für die Betriebsstunden von `kai-gpu` und den Dauerbetrieb von `kai-entry` (S1-03).
-6. Datenschutz-Regeln für den Prototyp festhalten (S1-04): wer in Open WebUI Admin ist, wie lange Chats aufbewahrt werden, ob und wann externe Modelle über LiteLLM freigegeben werden.
-7. Konten-Datenbank verschlüsseln: Postgres von Open WebUI auf `kai-data` (EBS-Verschlüsselung); für den Start so akzeptiert. `accounts.txt` fällt mit 3.13 weg.
-8. Pförtner (Phase 4): Entscheidungen aus [05](05_vorschlag-auto-stop.md); ob Uwe den CloudWatch-Alarm noch anlegt, ist offen.
+1. Egress: heute offen ohne Allowlist; auf die Ziele in [02 §3](02_anforderungen-infrastruktur.md) einschränken oder offen lassen.
+2. Private DNS-Zone `unserkai.de` mit `webui1` und `kai1` (heute ersetzt durch `kai_extra_hosts`); Security Groups per Gruppenreferenz ([02 §4](02_anforderungen-infrastruktur.md)).
+3. `kai-gpu` (`kai1`): Root von 30 auf 50 GB, beantragt; Terraform steht weiter auf 30 GB, und 30 GB liefen beim Wechsel des CUDA-Images voll ([02 §1.7](02_anforderungen-infrastruktur.md)).
+4. Budget-Grenze für die Betriebsstunden von `kai-gpu` und den Dauerbetrieb von `kai-entry` (S1-03).
+5. Datenschutz-Regeln für den Prototyp festhalten (S1-04): wer in Open WebUI Admin ist, wie lange Chats aufbewahrt werden, ob und wann externe Modelle über LiteLLM freigegeben werden.
+6. Konten-Datenbank verschlüsseln: Postgres von Open WebUI auf `kai-data` (EBS-Verschlüsselung); für den Start so akzeptiert. `accounts.txt` fällt mit 3.13 weg.
+7. Pförtner (Phase 4): Entscheidungen aus [05](05_vorschlag-auto-stop.md); ob Uwe den CloudWatch-Alarm noch anlegt, ist offen.
