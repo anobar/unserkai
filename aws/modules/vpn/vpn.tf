@@ -1,6 +1,6 @@
 
 resource "aws_security_group" "client_vpn" {
-  name        = "client-vpn-sg"
+  name        = "${var.name}-sg"
   description = "Security Group for AWS Client VPN"
   vpc_id      = var.vpc_id
 
@@ -23,22 +23,22 @@ resource "aws_security_group" "client_vpn" {
   }
 
   tags = {
-    Name = "client-vpn-sg"
+    Name = "${var.name}-sg"
   }
 }
 
 resource "aws_cloudwatch_log_group" "client_vpn" {
-  name              = "/aws/client-vpn/access"
+  name              = "/aws/${var.name}/access"
   retention_in_days = 90
 }
 
 resource "aws_ec2_client_vpn_endpoint" "main" {
-  description            = "client-vpn"
+  description            = "${var.name}"
   server_certificate_arn = var.server_certificate_arn
   client_cidr_block      = var.vpn_client_cidr
   vpc_id                 = var.vpc_id
   split_tunnel           = true
-  transport_protocol     = "udp"
+  transport_protocol     = var.transport_protocol
   security_group_ids     = [aws_security_group.client_vpn.id]
 
   authentication_options {
@@ -53,12 +53,12 @@ resource "aws_ec2_client_vpn_endpoint" "main" {
   }
 
   tags = {
-    Name = "company-client-vpn"
+    Name = "${var.name}"
   }
 }
 
 resource "aws_cloudwatch_log_stream" "client_vpn" {
-  name           = "connections"
+  name           = "${var.name}"
   log_group_name = aws_cloudwatch_log_group.client_vpn.name
 }
 
