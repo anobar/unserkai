@@ -14,7 +14,11 @@ module "ec2" {
   instance_type                = "t3.medium"
 
   firewall_rules = local.rules
+  ec2_role_policy_attachments  = [
+    aws_iam_policy.ec2_start_stop.arn
+  ]
   route53_public_hostedzone_id = var.route53_public_hostedzone_id
+
 
   user_data = <<-USERDATA
     #!/bin/bash

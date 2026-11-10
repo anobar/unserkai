@@ -23,3 +23,6 @@ output "availability_zone" {
   value = data.aws_subnet.selected.availability_zone
   description = "availability zone used for the ec2 instance"
 }
+ output "ec2_iam_role" {
+   value = aws_iam_role.ec2-role
+ }
