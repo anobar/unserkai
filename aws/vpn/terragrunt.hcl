@@ -13,8 +13,8 @@ dependency "certificate" {
 }
 
 inputs = {
-  server_vpc_id                       = dependency.vpc.outputs.vpc.vpc.id
-  server_vpc_name               = dependency.vpc.outputs.vpc.vpc.tags["Name"]
+  server_vpc_id                = dependency.vpc.outputs.vpc.vpc.id
+  server_vpc_name              = dependency.vpc.outputs.vpc.vpc.tags["Name"]
   private_subnet_ids           = dependency.vpc.outputs.vpc.private_subnet[*].id
   route53_public_hostedzone_id = dependency.route53.outputs.domain.hosted_zone_id
   server_certificate_arn       = dependency.certificate.outputs.arn

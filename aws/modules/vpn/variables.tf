@@ -7,6 +7,11 @@ variable "aws_region" {
   default = "eu-central-1"
 }
 
+variable "name" {
+  description = "variable for several components"
+  default = "client-vpn"
+}
+
 variable "vpc_id" {
   type = string
 }
@@ -35,4 +40,9 @@ variable "vpn_client_cidr" {
   description = "Adressbereich für VPN-Clients; darf sich nicht mit VPC-/On-Prem-Netzen überschneiden"
   type        = string
   default     = "10.250.0.0/22"
+}
+
+variable "transport_protocol" {
+  description = "transport protocol: udp or tcp"
+  default     = "tcp"
 }

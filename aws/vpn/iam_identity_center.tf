@@ -24,14 +24,7 @@ module "aws-iam-identity-center" {
       given_name       = "Uwe"
       family_name      = "Bartels"
       email            = "uwe.bartels@posteo.de"
-    },
-    "axel.rasche" : {
-      group_membership = ["Admin", "Dev"]
-      user_name        = "axel.rasche"
-      given_name       = "Axel"
-      family_name      = "Rasche"
-      email            = "teams@rasche.ch"
-    },
+    } 
   }
 
   // Create permissions sets backed by AWS managed policies
