@@ -14,6 +14,8 @@ Nicht gebraucht: AWS-Schlüssel (die Rolle liefert kurzlebige Zugangsdaten über
 
 Warum ein Tag statt einer festen Instanz-ID: Eine zweite GPU-Maschine braucht dann nur das Tag, keine neue Berechtigung. Da nur Terraform Tags setzt (die Rolle hat kein `ec2:CreateTags`), kann sich niemand über das Tag Rechte verschaffen.
 
+Stand im Repo: Die Instanzrolle von `webui1` erlaubt `ec2:StartInstances` und `ec2:StopInstances` bereits auf der festen Instanz-ID von `kai1` (`aws/webui1/iam.tf`, Änderung in PR #18), dazu `ec2:DescribeInstances`; der Pförtner läuft damit für `kai1` ohne weitere Änderung. Die Tag-Lösung unten ist nur nötig, sobald eine zweite GPU-Maschine dazukommt (eine neue Maschine bräuchte dann nur das Tag statt einer Änderung an der Richtlinie); der CloudWatch-Alarm (3.3) fehlt dort noch.
+
 ## 2. IAM-Richtlinie (zum Lesen)
 
 ```json

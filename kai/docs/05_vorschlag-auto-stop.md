@@ -1,6 +1,6 @@
 # Kai — Konzept: GPU-Maschinen bei Bedarf starten, nach Leerlauf stoppen
 
-Stand: 10.11.2026, Konzept, nicht umgesetzt. Die AWS-Seite (Terraform) und die Ansible-Rollen bauen erst nach den Entscheidungen in [Abschnitt 10](#10-offene-entscheidungen).
+Stand: 10.11.2026. Pförtner, Ansible-Rolle und Filter sind gebaut und auf den Test-VMs im Heimnetz geprüft ([Abschnitt 8a](#8a-stand-der-umsetzung)); in AWS ist noch nichts ausgerollt, die Terraform-Seite und die Entscheidungen in [Abschnitt 10](#10-offene-entscheidungen) stehen aus.
 
 ## Kurzfassung
 
@@ -84,7 +84,7 @@ Was er tut:
 | Anfrage | Verhalten |
 |---|---|
 | Chat, Completion, Embedding (`/v1/chat/completions`, …) | Maschine aus → starten, Anfrage festhalten, bei Bereitschaft weiterleiten. Maschine an → sofort weiterleiten. In beiden Fällen Zeitstempel „letzte Anfrage“ setzen. |
-| Modellliste (`/v1/models`) | Aus einer Kopie beantworten, die er bei laufender Maschine auffrischt. Weckt nie. |
+| Modellliste (`/v1/models`) | Aus der Konfiguration beantworten (dieselbe Modellliste, aus der Ansible auch LiteLLM füllt). Weckt nie. |
 | `/health`, `/status` | Selbst beantworten: Zustand jeder Maschine, Phase, Prozent, geschätzte Restzeit, letzte Anfrage, geplanter Stopp. Weckt nie. |
 | `/wake/<maschine>` | Start anstoßen, sofort antworten. Für den Filter in Open WebUI und den Frühstart. |
 | `/hold/<maschine>?minutes=120` | Haltesperre: in dieser Zeit kein automatischer Stopp. Für Wartung oder Tests, die am Pförtner vorbei direkt mit `kai1` sprechen. |
@@ -278,6 +278,30 @@ Erwartung mit Pförtner, Frühstart und schnellerer Platte: Wer sich anmeldet un
 | 7 | AWS | gp3-Durchsatz von `kai-models` anheben, falls [Abschnitt 10](#10-offene-entscheidungen) das vorsieht | Ladezeit neu gemessen |
 
 Randbedingungen: keine langlebigen AWS-Schlüssel; kein neuer Port nach außen auf `webui1`; keine Änderung an der Security Group von `kai1`; keine interne Adresse im Repo (`kai1.unserkai.de` ist in Ordnung). Was LiteLLM an automatischen Prüfungen anbietet (`background_health_checks`), bleibt aus, sonst würde ein Prüfruf die Maschine wecken.
+
+## 8a. Stand der Umsetzung
+
+Gebaut ist alles aus den Zeilen 3–6 der Tabelle oben (Zeile 1 ist AWS-Seite, siehe [07](07_aws-berechtigungen-pfoertner.md); Zeile 7 steht aus):
+
+| Teil | Wo im Repo |
+|---|---|
+| Pförtner (Python, nur Standardbibliothek, `boto3` aus Debian nur für den echten AWS-Betrieb) | `kai/bin/kai-pfoertner` |
+| Ansible-Rolle `kai_pfoertner` (vor `kai_entry`), Betriebswerte in `ansible/inventory/group_vars/kai_entry.yml`; `kai_pfoertner_enabled: false` schaltet auf direkten Zugriff zurück und stoppt den Pförtner | `ansible/roles/kai_pfoertner/` |
+| LiteLLM zeigt auf den Pförtner (`api_base`), Timeout 600 s; `kai_gpu_preload: []` | `kai/compose/entry/litellm.yaml.j2`, `group_vars` |
+| Filter „Kai-Status“, eingespielt von `kai-bootstrap` (Schritt `status-filter`) | `kai/openwebui/kai_status_filter.py` |
+| Automatische Tests (12 Fälle: Wecken, Strom, Lebenszeichen, Start nur einmal, Leerlaufstopp, Haltesperre, Kapazitätsfehler, Fehlstart, laufende Anfrage verhindert Stopp, Fortschritt) | `kai/tests/test_kai_pfoertner.py`, Aufruf `python3 kai/tests/test_kai_pfoertner.py` |
+
+Geprüft auf `kai-entry-pre` und `kai-gpu-pre` (am 10.11.2026):
+
+- Beide Deploys laufen durch, der zweite Lauf auf `kai-entry-pre` meldet `changed=0`.
+- Kette Open WebUI / `curl` → LiteLLM → Pförtner → llama-swap antwortet, mit und ohne Stream. Dabei fiel ein Fehler auf, den die automatischen Tests nicht fanden: Der Pförtner schickte den Header `Server` doppelt, LiteLLMs Client lehnt das ab; behoben, mit eigenem Test.
+- Wecken mit simuliertem AWS (`provider: sim`, 20 s Start): eine Anfrage über LiteLLM an die „gestoppte“ Maschine kommt nach 22 s beantwortet an; das Journal zeigt die Phasen.
+- Leerlaufstopp (Test mit 2 min): Stopp um 18:44:00, 2:34 min nach der letzten Anfrage (Prüfung im Minutentakt).
+- Frühstart: Ein Anmeldeversuch in Open WebUI (`POST /api/v1/auths/signin`) erscheint im Log und setzt die Aktivität des Pförtners zurück.
+- Filter: gegen die gestoppte Maschine zeigt er alle 2 s eine Zeile (`⟳ kai1 startet · Maschine bootet · ▰▰▱▱▱▱▱▱▱▱ 23 % · noch etwa 75 s`) und zum Schluss „✔ kai1 bereit“; für Modelle ohne GPU-Maschine bleibt er still.
+- **Verzögerung durch den Hop** (Test-VM, Antwort mit einem Token, jeweils 6 Läufe): bis zum ersten Byte 2–6 ms über den Pförtner, 4–8 ms direkt; Gesamtzeit 19–22 ms in beiden Fällen. Der Hop ist nicht messbar; AWS-Werte stehen aus.
+
+Nicht geprüft, weil nur in AWS möglich: echtes `StartInstances`/`StopInstances` und die Instanzrolle (`provider: aws`), die echte Dauer eines Kaltstarts, die Zeile „Anmeldung“ mit einem echten Konto im Log, sowie die Anzeige der Statuszeile im Browser (der Filter wurde im Open-WebUI-Container direkt aufgerufen).
 
 ## 9. Messen, bevor die Werte feststehen
 
