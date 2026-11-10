@@ -83,11 +83,11 @@ Voraussetzung: Punkte aus [02 §8](02_anforderungen-infrastruktur.md) erfüllt, 
 | 3.10 | Installationsprotokoll + Abweichungen zurück in die Rollen (S1-15), PR | gemergt | erledigt (7720180, PR #14) |
 | 3.11 | **Wechsel-Probe (Kann):** `kai-gpu` einmal durch eine neue Instanz aus demselben Image ersetzen, Volume `kai-models` umhängen, DNS nachziehen, `make deploy LIMIT=kai1` | Dauer gemessen gegen die Tabelle in [01 §3](01_architektur.md); Abweichungen in die Rollen | offen |
 | 3.12 | **Stand von `main` ausrollen:** `make check`, dann `make deploy LIMIT=webui1` und `make deploy LIMIT=kai1`; neue Stücke: Platzprüfung und Aufräumen der Images, Modell vorladen, `kai_extra_hosts` | zweiter Lauf `changed=0`; `kai-smoke --target entry` und `--target gpu` grün | offen; Root von `kai1` steht in Terraform weiter auf 30 GB (offener Punkt 3) |
-| 3.13 | **`kai-bootstrap` ohne Passwortdatei:** Startpasswörter einmal anzeigen, beim zweiten Lauf `KAI_ADMIN_PASSWORD` oder eine Abfrage; zuerst auf `kai-entry-pre` testen, dann nach `/usr/local/sbin` auf `webui1` kopieren; erst wenn das Admin-Passwort in der KeePass liegt, `/opt/kai/accounts.txt` löschen | auf `kai-entry-pre` zweimal gelaufen, beim zweiten nichts geändert; auf `webui1` gibt es kein `accounts.txt` mehr | Code liegt im Branch `kai-05-pfoertner` (PR #17), ist weder gemergt noch getestet noch ausgerollt |
+| 3.13 | **`kai-bootstrap` ohne Passwortdatei:** Startpasswörter einmal anzeigen, beim zweiten Lauf `KAI_ADMIN_PASSWORD` oder eine Abfrage; zuerst auf `kai-entry-pre` testen, dann nach `/usr/local/sbin` auf `webui1` kopieren; erst wenn das Admin-Passwort in der KeePass liegt, `/opt/kai/accounts.txt` mit `shred -u` löschen | auf `kai-entry-pre` zweimal gelaufen, beim zweiten nichts geändert; auf `webui1` gibt es kein `accounts.txt` mehr | Code in `main` (PR #17), laut PR auf den Pre-VMs geprüft; nicht ausgerollt |
 
 ## Phase 4 — Pförtner: `kai1` bei Bedarf starten, nach Leerlauf stoppen
 
-Das Konzept steht in [05](05_vorschlag-auto-stop.md) (Fassung in PR #17). Die Entwicklung läuft im Branch `kai-05-pfoertner`. Uwe hat die Instanzrolle von `webui1` am 10.11. erweitert ([aws/webui1/iam.tf](../../aws/webui1/iam.tf)): `ec2:StartInstances`/`StopInstances` gelten nur für die Instanz-ID von `kai1` statt per Tag, `ec2:DescribeInstances` für alle Instanzen. Der CloudWatch-Alarm als Sicherheitsnetz fehlt.
+Das Konzept steht in [05](05_vorschlag-auto-stop.md); Rolle `kai_pfoertner` und `kai/bin/kai-pfoertner` sind mit PR #17 in `main`, laut PR auf den Pre-VMs geprüft, aber nicht ausgerollt. Uwe hat die Instanzrolle von `webui1` am 10.11. erweitert ([aws/webui1/iam.tf](../../aws/webui1/iam.tf)): `ec2:StartInstances`/`StopInstances` gelten nur für die Instanz-ID von `kai1` statt per Tag, `ec2:DescribeInstances` für alle Instanzen. Der CloudWatch-Alarm als Sicherheitsnetz fehlt.
 
 ## Arbeitsweise
 
@@ -98,7 +98,7 @@ Das Konzept steht in [05](05_vorschlag-auto-stop.md) (Fassung in PR #17). Die En
 - **Maschinenwechsel:** nie auf einer Maschine von Hand reparieren, was die Rolle nicht auch auf einer frischen Maschine herstellt; jede Abweichung geht zurück in die Rolle. Das hält die Regel aus [01 §3](01_architektur.md) ein.
 - **Später auf `kai-entry`:** dieselben Checks laufen dort aus denselben Debian-Paketen wie in `kai-dev`; dessen Werkzeugliste ist die Vorlage dafür.
 - **Sprache:** Repo-Konvention Deutsch für Kai-Dokumente, Kommentare und Aufgaben-Namen; Variablennamen, Logausgaben und Dateinamen Englisch.
-- **Geheimnisse:** nie im Git. `.env` nur auf `kai-entry`; Brave-Key, `WEBUI_SECRET_KEY` und LiteLLM-Master-Key zusätzlich in der Team-KeePass (`unserkai.kdbx`).
+- **Geheimnisse:** nie im Git. `.env` nur auf `kai-entry`; Brave-Key, `WEBUI_SECRET_KEY` und LiteLLM-Master-Key zusätzlich in der Team-KeePass (`unserkai.kdbx`), das Admin-Passwort von Open WebUI nur dort (`kai-bootstrap` zeigt es einmalig und speichert nichts).
 
 ## Offene Punkte (Entscheidung Uwe / Team)
 
