@@ -26,7 +26,7 @@ Es gibt kein Standardpasswort, das zu ändern wäre: LiteLLM und Postgres nehmen
 | M4 | Security Group `webui1`: TCP 3000 und 4000 nur aus dem VPN-Client-Bereich (`vpn_vpc_cidr` in `aws/common.hcl`) beziehungsweise dessen NAT-Adressen, nicht von überall | #3 | Uwe (`aws/`) | offen |
 | M5 | `WEBUI_SECRET_KEY` und Brave-Key in die Team-KeePass (`unserkai.kdbx`), wie [04 Plan](04_plan.md) Abschnitt Geheimnisse vorsieht | #3, #5 | Axel | nicht belegt |
 | M6 | Pförtner und brave-mcp in [01](01_architektur.md) als „bewusst ohne Authentisierung, nur intern erreichbar“ festhalten | #4, #5 | Axel | offen |
-| M7 | llama-swap mit `apiKeys` absichern (§5), zusätzlich zu M1, nicht statt M1 | #2 | Axel | Vorschlag |
+| M7 | llama-swap mit `apiKeys` absichern (§5), zusätzlich zu M1, nicht statt M1 | #2 | Axel | im Repo (11.11.), Ausrollen offen: vorher `LLAMA_SWAP_KEY` in beide `.env` und in die KeePass |
 | M8 | Sobald das VPN steht: `kai_litellm_bind` und `kai_webui_bind` auf die VPN-seitige Adresse, HTTP bleibt nur innerhalb des VPN-Tunnels; vorher M1, M2, M4 | #1, #3 | Axel nach Uwes VPN | wartet |
 
 ## 3. LiteLLM Admin UI: eigene Konten statt Master-Key
@@ -51,12 +51,11 @@ LiteLLM kennt drei Login-Wege an der UI: Umgebungs-Login (`UI_USERNAME`, Standar
 
 llama-swap ist ohne Konfiguration unauthentisiert. Es kennt eine Liste `apiKeys` in der `config.yaml`; mit einem Eintrag verlangt jede Anfrage den Key (`Authorization: Bearer`, `x-api-key` oder HTTP Basic), auch die Web-UI und `/api/`. Alle Keys sind gleichwertig, es gibt keine Konten, Rollen oder Limits pro Key, und llama-swap selbst nennt `apiKeys` ausdrücklich keinen Ersatz für eine Firewall. Daher M1 (Security Group) als Hauptmaßnahme und `apiKeys` als zweite Schicht.
 
-Was M7 im Repo berührt (ein Change Set, Pre-VMs zweimal durchlaufen):
+So ist M7 umgesetzt:
 
-- `kai/compose/gpu/.env.example`: `LLAMA_SWAP_KEY`; `llama-swap.yaml.j2`: `apiKeys: ["${env.LLAMA_SWAP_KEY}"]` (fehlt die Variable, startet llama-swap nicht, gewollt).
-- `kai/compose/entry/.env.example` und `litellm.yaml.j2`: derselbe Key als `api_key` statt `none`.
-- Pförtner und `kai-smoke`: Gesundheits- und Modellabfragen an llama-swap brauchen den Key; prüfen, ob der Pförtner den `Authorization`-Header der Anfrage weiterreicht.
-- Prüfen, ob das gepinnte Image `apiKeys` schon kennt (Feature neuer als manche `unified-cuda`-Stände); sonst Image-Update mit `kai-pin-images`.
+- `kai-gpu`: `/opt/kai/.env` mit `LLAMA_SWAP_KEY` (Mensch, 0600; Vorlage `kai/compose/gpu/.env.example`, optional `kai_gpu_env_seed`), `llama-swap.yaml` mit `apiKeys: [${env.LLAMA_SWAP_KEY}]`; fehlt die Variable, startet llama-swap nicht. Der Compose-Healthcheck sendet den Key, weil auch `/health` ihn verlangt.
+- `kai-entry`: derselbe Key in `/opt/kai/.env`; LiteLLM sendet ihn als `api_key`, der Pförtner reicht den Header durch und liest ihn aus der `.env` für seine eigenen Abfragen (`/health`, `/running`, Modell laden); `kai-smoke` liest ihn für die direkten Abfragen an kai-gpu.
+- Ausrollen: Key erzeugen (`echo "sk-$(openssl rand -hex 24)"`), in die KeePass, in beide `.env` eintragen, erst `kai-gpu` dann `kai-entry` deployen; beide Rollen brechen ab, wenn der Key fehlt.
 
 Web-UI heute erreichen (kai1 muss laufen; Browser auf dem Rechner, auf dem der Tunnel endet):
 
@@ -66,4 +65,4 @@ ssh -N -L 8080:127.0.0.1:8080 \
   BENUTZER@i-0f896ee21e1ae8c72
 ```
 
-Dann `http://localhost:8080/ui`.
+Dann `http://localhost:8080/ui`; nach M7 fragt der Browser nach Benutzer und Passwort (HTTP Basic): Benutzer beliebig, Passwort `LLAMA_SWAP_KEY`.
