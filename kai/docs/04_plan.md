@@ -5,7 +5,7 @@ Stand: 2026-11-10 · Bezug: Sprint 01 in ClickUp (S1-xx), [01 Architektur](01_ar
 ## Stand
 
 - Phase 1 und 2 sind abgeschlossen, und Kai 1.0 läuft seit 07.11. auf `webui1` und `kai1` (PR #14 im Fork, Protokoll dort).
-- `webui1` und `kai1` tragen seit 10.11. den Stand von `main` samt Pförtner (3.12, 3.13, Phase 4).
+- `webui1` und `kai1` tragen seit 10.11. den Stand von `main` samt Pförtner (3.12, 3.13, Phase 4); `webui1` ist `t3.medium` mit Root 30 GB (geprüft 19.11.) ([Bestandsaufnahme](instance_specs.md)) und trägt ein CPU-Modell (`kai_entry_cpu_models`).
 - Offen in Phase 3 sind 3.6–3.8 und 3.11, die Ergebnisse von 3.5 sind unvollständig belegt.
 - Danach folgt Phase 4, der Pförtner.
 

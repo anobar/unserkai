@@ -1,8 +1,10 @@
 ---
 - name: LiteLLM neu starten
   ansible.builtin.command:
-    cmd: >-
-      docker compose --project-directory {{ kai_entry_install_dir }}
-      --env-file {{ kai_entry_install_dir }}/.env --env-file {{ kai_entry_install_dir }}/stack.env
-      restart litellm
+    cmd: docker compose {{ kai_entry_compose_args }} restart litellm
+  changed_when: true
+
+- name: Llama-swap neu starten
+  ansible.builtin.command:
+    cmd: docker compose {{ kai_entry_compose_args }} restart llama-swap
   changed_when: true

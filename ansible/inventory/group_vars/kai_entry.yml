@@ -45,3 +45,17 @@ kai_pfoertner_status_checks:
 
 # Laeuft staendig, also aktiviert nur ein Neustart einen automatisch installierten Kernel (Rolle kai_updates).
 kai_updates_automatic_reboot: true
+
+# CPU-Modell auf kai-entry (llama-swap im CPU-Image, kai/compose/entry/compose.cpu.yaml): antwortet ohne kai-gpu
+# und macht die Ablaeufe LiteLLM -> llama-swap ohne GPU testbar (kai-smoke --target entry --model <name>).
+# Gemessen 19.11. auf webui1 (t3.medium): 8 Tok/s, erstes Token nach 1 s bei kurzer Frage, 30 s bei 1k Kontext,
+# 2 min bei 3k Kontext; 1,26 GiB RAM geladen. [] = kein CPU-Stack. Dateien stehen in kai/models.list.
+kai_entry_cpu_models:
+  - name: qwen3-1.7b-cpu
+    file: Qwen3-1.7B-Q4_K_M.gguf
+    ctx_size: 4096
+    # Qwen3 ohne Denkphase: auf der CPU kostet sie Minuten je Antwort.
+    enable_thinking: false
+    ttl: 600
+# Hartes RAM-Limit des CPU-Containers (compose.cpu.yaml); neben dem Stack (~2,4 GB) bleiben auf 4 GB rund 1,5 GB.
+kai_entry_cpu_mem_limit: 1600m

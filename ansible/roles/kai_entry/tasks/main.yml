@@ -25,13 +25,56 @@
   loop_control:
     label: "{{ item }}"
 
-- name: Compose-Datei kopieren
+- name: Compose-Dateien kopieren
   ansible.builtin.copy:
-    src: "{{ kai_entry_src_dir }}/compose.yaml"
-    dest: "{{ kai_entry_install_dir }}/compose.yaml"
+    src: "{{ kai_entry_src_dir }}/{{ item }}"
+    dest: "{{ kai_entry_install_dir }}/{{ item }}"
     owner: root
     group: root
     mode: "0644"
+  loop:
+    - compose.yaml
+    - compose.cpu.yaml
+
+# CPU-Modell (kai_entry_cpu_models): Skript, Liste und Modelldatei wie in der Rolle kai_gpu, dazu die llama-swap-Konfiguration.
+- name: Modell-Skript installieren
+  ansible.builtin.copy:
+    src: "{{ kai_entry_models_pull_src }}"
+    dest: /usr/local/bin/kai-models-pull
+    owner: root
+    group: root
+    mode: "0755"
+  when: kai_entry_cpu_models | length > 0
+
+- name: Modell-Liste kopieren
+  ansible.builtin.copy:
+    src: "{{ kai_entry_models_list_src }}"
+    dest: "{{ kai_entry_install_dir }}/models.list"
+    owner: root
+    group: root
+    mode: "0644"
+  when: kai_entry_cpu_models | length > 0
+
+- name: Modelle herunterladen
+  ansible.builtin.command:
+    cmd: >-
+      kai-models-pull --dir "{{ kai_entry_models_dir }}"
+      --list "{{ kai_entry_install_dir }}/models.list"
+      {{ kai_entry_cpu_models | map(attribute='file') | join(' ') }}
+  register: kai_entry_pull
+  changed_when: "'pulled:' in kai_entry_pull.stdout"
+  environment: "{{ docker_proxy_env | default({}) }}"
+  when: kai_entry_cpu_models | length > 0
+
+- name: Llama-swap-Konfiguration erzeugen
+  ansible.builtin.template:
+    src: "{{ kai_entry_src_dir }}/llama-swap.yaml.j2"
+    dest: "{{ kai_entry_install_dir }}/llama-swap.yaml"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Llama-swap neu starten
+  when: kai_entry_cpu_models | length > 0
 
 # Der Filter "Kai-Status" fuer Open WebUI; kai-bootstrap spielt ihn in Open WebUI ein.
 - name: Filter Kai-Status kopieren
@@ -58,6 +101,8 @@
       KAI_WEBUI_PORT={{ kai_webui_port }}
       KAI_LITELLM_BIND={{ kai_litellm_bind }}
       KAI_LITELLM_PORT={{ kai_litellm_port }}
+      KAI_MODELS_DIR={{ kai_entry_models_dir }}
+      KAI_CPU_MEM_LIMIT={{ kai_entry_cpu_mem_limit }}
     dest: "{{ kai_entry_install_dir }}/stack.env"
     owner: root
     group: root
@@ -175,8 +220,4 @@
       Bitte 'docker compose ps' pruefen.
     quiet: true
   when: not ansible_check_mode
-  loop:
-    - open-webui
-    - litellm
-    - litellm-db
-    - brave-mcp
+  loop: "{{ ['open-webui', 'litellm', 'litellm-db', 'brave-mcp'] + (['llama-swap'] if kai_entry_cpu_models | length > 0 else []) }}"
