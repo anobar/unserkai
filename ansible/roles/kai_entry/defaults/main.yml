@@ -18,6 +18,11 @@ kai_entry_cpu_mem_limit: 1600m
 kai_entry_models_dir: "{{ kai_entry_install_dir }}/models"
 kai_entry_models_pull_src: "{{ playbook_dir }}/../../kai/bin/kai-models-pull"
 kai_entry_models_list_src: "{{ playbook_dir }}/../../kai/models.list"
+# Externe Modelle in LiteLLM: Eintraege mit name (Name in Open WebUI), model (LiteLLM-Modellstring mit
+# Anbieter-Praefix) und optional api_key_env (Variable in .env, Standard OPENROUTER_API_KEY); die Rolle prueft,
+# dass jede genannte Variable in .env gesetzt ist. [] = keine. Belegt in group_vars/kai_entry.yml.
+kai_entry_external_models: []
+kai_entry_external_timeout: 180
 # Gemeinsame Argumente fuer jeden 'docker compose'-Aufruf der Rolle; mit CPU-Modell kommt compose.cpu.yaml dazu.
 kai_entry_compose_args: >-
   --project-directory {{ kai_entry_install_dir }}
