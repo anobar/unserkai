@@ -1,7 +1,8 @@
 ---
+# Neu erzeugen statt restart: so liest der Container auch eine von Hand geaenderte .env (neuer Anbieter-Key).
 - name: LiteLLM neu starten
   ansible.builtin.command:
-    cmd: docker compose {{ kai_entry_compose_args }} restart litellm
+    cmd: docker compose {{ kai_entry_compose_args }} up -d --no-deps --force-recreate litellm
   changed_when: true
 
 - name: Llama-swap neu starten

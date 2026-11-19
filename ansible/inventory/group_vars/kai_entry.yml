@@ -61,3 +61,22 @@ kai_entry_cpu_models:
     ttl: 600
 # Hartes RAM-Limit des CPU-Containers (compose.cpu.yaml); neben dem Stack (~2,4 GB) bleiben auf 4 GB rund 1,5 GB.
 kai_entry_cpu_mem_limit: 1600m
+
+# Externe Modelle ueber OpenRouter (kostenlose Varianten ":free"): antworten ohne kai-gpu, Daten gehen an OpenRouter
+# und dessen Anbieter, also nichts Vertrauliches (Datenschutz-Regel, Plan offener Punkt 5; Training in den
+# OpenRouter-Privacy-Einstellungen abgeschaltet). Konto-Limit aller :free-Modelle zusammen: 20 Anfragen/min,
+# 50/Tag. Die Auswahl wechselt bei OpenRouter oft; openrouter/free waehlt je Anfrage ein verfuegbares freies Modell.
+# Stand 20.11.2026 (https://openrouter.ai/collections/free-models). Key OPENROUTER_API_KEY in /opt/kai/.env.
+kai_entry_external_models:
+  - name: openrouter-free
+    model: openrouter/openrouter/free
+  - name: nemotron-3-ultra-openrouter
+    model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+  - name: gemma-4-31b-openrouter
+    model: openrouter/google/gemma-4-31b-it:free
+  - name: gemma-4-26b-a4b-openrouter
+    model: openrouter/google/gemma-4-26b-a4b-it:free
+  - name: nemotron-3.5-super-vl-openrouter
+    model: openrouter/nvidia/nemotron-3.5-super-vl:free
+# Sekunden, die LiteLLM auf ein externes Modell wartet (kein Kaltstart, aber lange Antworten mit Denkphase).
+kai_entry_external_timeout: 180

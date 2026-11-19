@@ -26,6 +26,15 @@ model_list:
       timeout: {{ kai_litellm_request_timeout }}
       stream_timeout: {{ kai_litellm_request_timeout }}
 {% endfor %}
+{% for m in kai_entry_external_models | default([]) %}
+  - model_name: {{ m.name }}
+    litellm_params:
+      # Externes Modell (kai/docs/01_architektur.md §5): weckt kai-gpu nie; Key aus .env.
+      model: {{ m.model }}
+      api_key: os.environ/{{ m.api_key_env | default('OPENROUTER_API_KEY') }}
+      timeout: {{ kai_entry_external_timeout | default(180) }}
+      stream_timeout: {{ kai_entry_external_timeout | default(180) }}
+{% endfor %}
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

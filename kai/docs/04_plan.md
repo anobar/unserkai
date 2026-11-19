@@ -107,7 +107,7 @@ Das Konzept steht in [05](05_vorschlag-auto-stop.md); Rolle `kai_pfoertner` und 
 2. Private DNS-Zone `unserkai.de` mit `webui1` und `kai1` (heute ersetzt durch `kai_extra_hosts`); Security Groups per Gruppenreferenz ([02 §4](02_anforderungen-infrastruktur.md)).
 3. `kai-gpu` (`kai1`): Root von 30 auf 50 GB, beantragt; Terraform steht weiter auf 30 GB, und 30 GB liefen beim Wechsel des CUDA-Images voll ([02 §1.7](02_anforderungen-infrastruktur.md)).
 4. Budget-Grenze für die Betriebsstunden von `kai-gpu` und den Dauerbetrieb von `kai-entry` (S1-03).
-5. Datenschutz-Regeln für den Prototyp festhalten (S1-04): wer in Open WebUI Admin ist, wie lange Chats aufbewahrt werden, ob und wann externe Modelle über LiteLLM freigegeben werden.
+5. Datenschutz-Regeln für den Prototyp festhalten (S1-04): wer in Open WebUI Admin ist, wie lange Chats aufbewahrt werden, ob und wann externe Modelle über LiteLLM freigegeben werden. Teilentscheidung Axel 20.11.: die kostenlosen OpenRouter-Modelle sind frei, mit der Regel „nichts Vertrauliches an externe Modelle“ ([Modellkarten](modellkarten.html)); kostenpflichtige Anbieter bleiben offen.
 6. Konten-Datenbank verschlüsseln: Postgres von Open WebUI auf `kai-data` (EBS-Verschlüsselung); für den Start so akzeptiert.
 7. Pförtner (Phase 4): Entscheidungen aus [05](05_vorschlag-auto-stop.md); ob Uwe den CloudWatch-Alarm noch anlegt, ist offen.
 8. Zugangsweg für Harnesses zu LiteLLM (heute nur `127.0.0.1:4000`): zweiter Port in `kai-tunnel` oder Freigabe im VPN-CIDR ([06](06_zugang.md)); dazu, ob `tpm_limit`/`max_parallel_requests` je Nutzer als Kostenschutz für die GPU-Laufzeit gesetzt werden.

@@ -169,6 +169,16 @@
       derselbe Wert wie dort, siehe kai/compose/entry/.env.example).
     quiet: true
 
+- name: Keys der externen Modelle gesetzt pruefen
+  ansible.builtin.assert:
+    that:
+      - kai_entry_env_raw.content | b64decode is regex('(?m)^' ~ item ~ '=\\S+')
+    fail_msg: >-
+      In {{ kai_entry_install_dir }}/.env fehlt {{ item }} (Key eines externen Modells aus kai_entry_external_models,
+      siehe kai/compose/entry/.env.example).
+    quiet: true
+  loop: "{{ kai_entry_external_models | map(attribute='api_key_env', default='OPENROUTER_API_KEY') | unique | list }}"
+
 - name: Rechte der Umgebungsdatei pruefen
   ansible.builtin.assert:
     that:

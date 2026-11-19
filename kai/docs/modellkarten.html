@@ -1,0 +1,169 @@
+<title>Kai Modellkarten</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one A4 sheet; head with three rules, then a two-column register of cards, one per model in the
+   Open WebUI dropdown. Print from the browser (A4 portrait). Same type and tokens as datenfluss-pdf.html. */
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #1d2430; --muted: #5a6577; --line: #c9d0db; --accent: #2f5d8a;
+  --cpu: #b26a00; --cpu-bg: #fff3df;      /* webui1, CPU */
+  --gpu: #2d7a3e; --gpu-bg: #e5f4e8;      /* kai1, GPU */
+  --ext: #6b5a8e; --ext-bg: #eeeaf5;      /* extern, OpenRouter */
+  --warn: #a8321f; --warn-bg: #fbe7e3;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --panel: #1a2029; --fg: #e3e8ef; --muted: #9aa6b8; --line: #36404f; --accent: #7fb0e0;
+  --cpu: #f0b155; --cpu-bg: #3a2a12; --gpu: #7fd18f; --gpu-bg: #183223; --ext: #b9a6e0; --ext-bg: #2a2438;
+  --warn: #f2917f; --warn-bg: #3d1f1a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --panel: #1a2029; --fg: #e3e8ef; --muted: #9aa6b8; --line: #36404f; --accent: #7fb0e0;
+  --cpu: #f0b155; --cpu-bg: #3a2a12; --gpu: #7fd18f; --gpu-bg: #183223; --ext: #b9a6e0; --ext-bg: #2a2438;
+  --warn: #f2917f; --warn-bg: #3d1f1a; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font: 10.5px/1.4 var(--sans); margin: 0;
+  padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.sheet { max-width: 190mm; margin: 0 auto; display: grid; gap: 10px; }
+h1 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 2px 0 0; }
+header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.legend { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { display: inline-block; font: 500 9px/1 var(--sans); letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
+.b-cpu { color: var(--cpu); background: var(--cpu-bg); } .b-gpu { color: var(--gpu); background: var(--gpu-bg); }
+.b-ext { color: var(--ext); background: var(--ext-bg); }
+.rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.rule { border-left: 3px solid var(--accent); padding: 2px 0 2px 8px; }
+.rule.warn { border-color: var(--warn); }
+.rule b { display: block; font-weight: 600; }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; display: grid; gap: 5px; min-width: 0;
+  break-inside: avoid; }
+.card.cpu { border-top: 3px solid var(--cpu); } .card.gpu { border-top: 3px solid var(--gpu); } .card.ext { border-top: 3px solid var(--ext); }
+.name { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.name code { font: 500 12.5px/1.2 var(--mono); }
+.where { color: var(--muted); }
+.ep { font: 9.5px/1.45 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.ep span { color: var(--fg); }
+.pm { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pm h3 { font: 500 9px/1 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 3px; }
+.pm ul { margin: 0; padding-left: 12px; } .pm li { margin: 0 0 1px; }
+.meta { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 4px; font-variant-numeric: tabular-nums; }
+.meta b { color: var(--fg); font-weight: 500; }
+footer { color: var(--muted); font-size: 9.5px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 560px) { .cards, .rules, .pm { grid-template-columns: 1fr; } }
+@page { size: A4 portrait; margin: 9mm 10mm; }
+@media print {
+  body { background: #fff; color: #1d2430; font-size: 8.6px; padding: 0; }
+  .sheet { max-width: none; gap: 7px; } .cards { gap: 6px; } .card { padding: 6px 8px; gap: 4px; }
+  .name code { font-size: 11px; } .ep { font-size: 8px; } h1 { font-size: 15px; }
+}
+</style>
+
+<div class="sheet">
+<header>
+  <div>
+    <h1>Kai Modellkarten</h1>
+    <p class="sub">Alle Modelle im Dropdown von Open WebUI. Stand 20.11.2026, Konfiguration aus <span style="font-family:var(--mono)">ansible/inventory</span> (host_vars kai1, group_vars kai_entry).</p>
+  </div>
+  <div class="legend">
+    <span class="badge b-gpu">kai1 · GPU, bei Bedarf an</span>
+    <span class="badge b-cpu">webui1 · CPU, läuft durch</span>
+    <span class="badge b-ext">extern · OpenRouter</span>
+  </div>
+</header>
+
+<section class="rules">
+  <div class="rule warn"><b>Vertrauliches nur an Kai-eigene Modelle.</b> Bei den externen Modellen geht die Frage samt Anhang an OpenRouter und dessen Anbieter. Training ist im Konto abgeschaltet, Protokollierung nicht ausgeschlossen.</div>
+  <div class="rule"><b>Externe Modelle: 50 Anfragen am Tag, 20 pro Minute.</b> Das Limit gilt für alle fünf zusammen (ein Konto). Antwort „429“ oder „busy“: später noch einmal oder anderes Modell wählen.</div>
+  <div class="rule"><b>Nur gpt-oss-20b weckt kai1.</b> Ist die Maschine aus, dauert die erste Antwort rund 3 Minuten (Status: Pförtner-Seite, Port 8082). Sie stoppt 30 Minuten nach der letzten Anfrage. CPU- und externe Modelle lassen kai1 aus.</div>
+</section>
+
+<section class="cards">
+
+<article class="card gpu">
+  <div class="name"><code>gpt-oss-20b</code><span class="badge b-gpu">kai1</span></div>
+  <div class="where">OpenAI gpt-oss 20B (MoE, 3,6B aktiv, MXFP4) auf der T4 von kai1 hinter llama-swap; LiteLLM geht über den Pförtner, der kai1 startet.</div>
+  <div class="ep">LiteLLM: <span>openai/gpt-oss-20b</span> → http://kai-pfoertner:8081/kai1/v1 → kai1.unserkai.de:8080</div>
+  <div class="pm">
+    <div><h3>Stärken</h3><ul><li>Allrounder mit Denkphase (reasoning medium)</li><li>Werkzeuge zuverlässig, auch Brave-Suche</li><li>Deutsch gut, 32k Kontext für lange Dokumente</li><li>Daten bleiben in Kai (AWS Frankfurt)</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Kein Bildverständnis</li><li>Kaltstart ~3 min, wenn kai1 aus ist</li><li>GPU-Stunden kosten Geld</li><li>Schreibt sachlich-knapp</li></ul></div>
+  </div>
+  <div class="meta"><span>Kontext <b>32k</b></span><span>Tempo <b>~25–40 Tok/s</b> (T4, erwartet)</span><span>Bilder <b>nein</b></span></div>
+</article>
+
+<article class="card cpu">
+  <div class="name"><code>qwen3-1.7b-cpu</code><span class="badge b-cpu">webui1</span></div>
+  <div class="where">Qwen3 1,7B (Q4_K_M) auf den zwei vCPUs von webui1, llama-swap im CPU-Image, niedrige Priorität, 1,6 GB RAM-Limit; entlädt nach 10 min Ruhe.</div>
+  <div class="ep">LiteLLM: <span>openai/qwen3-1.7b-cpu</span> → http://llama-swap:8080/v1 (Docker-Netz auf webui1)</div>
+  <div class="pm">
+    <div><h3>Stärken</h3><ul><li>Immer da, antwortet in Sekunden</li><li>Weckt kai1 nicht, kostet nichts extra</li><li>Daten bleiben in Kai</li><li>Erledigt im Hintergrund Titel und Tags der Chats</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Klein: wenig Wissen, erfindet Fakten</li><li>Nur 4k Kontext, keine Denkphase</li><li>Lange Eingaben langsam: 1k Tokens 30 s, 3k 2 min</li><li>Keine Bilder, Werkzeuge unzuverlässig</li></ul></div>
+  </div>
+  <div class="meta"><span>Kontext <b>4k</b></span><span>Tempo <b>8 Tok/s</b>, erstes Token 1 s (gemessen 19.11.)</span><span>Bilder <b>nein</b></span></div>
+</article>
+
+<article class="card ext">
+  <div class="name"><code>openrouter-free</code><span class="badge b-ext">extern</span></div>
+  <div class="where">Router von OpenRouter: wählt je Anfrage zufällig eines der gerade kostenlosen Modelle, das zur Anfrage passt (Bild, Werkzeuge).</div>
+  <div class="ep">LiteLLM: <span>openrouter/openrouter/free</span> → https://openrouter.ai/api/v1</div>
+  <div class="pm">
+    <div><h3>Stärken</h3><ul><li>Funktioniert weiter, wenn OpenRouter die freie Auswahl ändert</li><li>Gute Wahl, wenn ein bestimmtes Modell „busy“ meldet</li><li>Bilder möglich</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Nicht vorhersagbar, welches Modell antwortet</li><li>Qualität schwankt von Frage zu Frage</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
+  </div>
+  <div class="meta"><span>Kontext <b>bis 200k</b></span><span>Limit <b>50/Tag gemeinsam</b></span><span>Bilder <b>je nach Modell</b></span></div>
+</article>
+
+<article class="card ext">
+  <div class="name"><code>nemotron-3-ultra-openrouter</code><span class="badge b-ext">extern</span></div>
+  <div class="where">NVIDIA Nemotron 3 Ultra, 550B (55B aktiv), Hybrid Transformer-Mamba MoE; das stärkste Modell der freien Liste.</div>
+  <div class="ep">LiteLLM: <span>openrouter/nvidia/nemotron-3-ultra-550b-a55b:free</span> → https://openrouter.ai/api/v1</div>
+  <div class="pm">
+    <div><h3>Stärken</h3><ul><li>Reasoning auf Frontier-Niveau, schwere Aufgaben</li><li>Werkzeuge und mehrstufige Aufgaben</li><li>1M Kontext: ganze Dokumentensammlungen</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Nur Text, keine Bilder</li><li>Lange Denkphasen, Antwort dauert</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
+  </div>
+  <div class="meta"><span>Kontext <b>1M</b></span><span>Antwort max. <b>64k</b></span><span>Bilder <b>nein</b></span></div>
+</article>
+
+<article class="card ext">
+  <div class="name"><code>gemma-4-31b-openrouter</code><span class="badge b-ext">extern</span></div>
+  <div class="where">Google Gemma 4 31B, dichtes Modell mit Text-, Bild- und Videoeingabe, zuschaltbare Denkphase, Funktionsaufrufe.</div>
+  <div class="ep">LiteLLM: <span>openrouter/google/gemma-4-31b-it:free</span> → https://openrouter.ai/api/v1</div>
+  <div class="pm">
+    <div><h3>Stärken</h3><ul><li>Bilder und Fotos erklären</li><li>Natürliche Alltagssprache, mehrsprachig</li><li>256k Kontext</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Dichtes Modell, langsamer als die MoE-Nachbarn</li><li>Antwort höchstens 32k Tokens</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
+  </div>
+  <div class="meta"><span>Kontext <b>256k</b></span><span>Antwort max. <b>32k</b></span><span>Bilder <b>ja</b>, Video ja</span></div>
+</article>
+
+<article class="card ext">
+  <div class="name"><code>gemma-4-26b-a4b-openrouter</code><span class="badge b-ext">extern</span></div>
+  <div class="where">Google Gemma 4 26B A4B, MoE mit 3,8B aktiven Parametern; die schnelle Schwester des 31B mit Text, Bild und Video.</div>
+  <div class="ep">LiteLLM: <span>openrouter/google/gemma-4-26b-a4b-it:free</span> → https://openrouter.ai/api/v1</div>
+  <div class="pm">
+    <div><h3>Stärken</h3><ul><li>Schnelle Antworten für Alltagsfragen</li><li>Bilder möglich</li><li>256k Kontext</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Etwas schwächer als gemma-4-31b bei schweren Aufgaben</li><li>Antwort höchstens 32k Tokens</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
+  </div>
+  <div class="meta"><span>Kontext <b>256k</b></span><span>Antwort max. <b>32k</b></span><span>Bilder <b>ja</b>, Video ja</span></div>
+</article>
+
+<article class="card ext">
+  <div class="name"><code>nemotron-3.5-super-vl-openrouter</code><span class="badge b-ext">extern</span></div>
+  <div class="where">NVIDIA Nemotron 3.5 Super VL, 120B (12B aktiv), für Bilder, Dokumente, Bildschirmfotos und Video.</div>
+  <div class="ep">LiteLLM: <span>openrouter/nvidia/nemotron-3.5-super-vl:free</span> → https://openrouter.ai/api/v1</div>
+  <div class="pm">
+    <div><h3>Stärken</h3><ul><li>Dokumente, Tabellenfotos und Screenshots auslesen</li><li>Video verstehen</li><li>1M Kontext, Antwort bis 128k</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Für reine Textfragen kein Vorteil gegenüber Ultra oder Gemma</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
+  </div>
+  <div class="meta"><span>Kontext <b>1M</b></span><span>Antwort max. <b>128k</b></span><span>Bilder <b>ja</b>, Video ja</span></div>
+</article>
+
+</section>
+
+<footer>
+  <span>Quellen: host_vars/kai1.yml, group_vars/kai_entry.yml, kai/docs/03_modellvorschlag.md, Messung 19.11. (kai_entry.yml), OpenRouter-Katalog https://openrouter.ai/api/v1/models vom 20.11.2026.</span>
+  <span>Die freie Liste bei OpenRouter wechselt oft; verschwindet ein Modell, antwortet LiteLLM mit einem Fehler, die Karte wird mit der Modellliste geändert.</span>
+</footer>
+</div>
