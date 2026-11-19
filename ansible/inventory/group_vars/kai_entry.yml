@@ -32,7 +32,9 @@ kai_pfoertner_instance_id: "{{ hostvars[kai_gpu_peer].ansible_host if kai_pfoert
 kai_pfoertner_idle_minutes: 30
 kai_pfoertner_min_runtime_minutes: 10
 # Frueher Start, sobald sich jemand in Open WebUI anmeldet (nur im Zeitfenster, z. B. "7-23"; leer = immer).
-kai_pfoertner_wake_on_login: true
+# Aus, seit es das CPU-Modell und externe Modelle gibt: eine Anmeldung sagt nicht, dass kai-gpu gebraucht wird;
+# geweckt wird nur noch durch eine Anfrage an ein GPU-Modell (LiteLLM ueber den Pfoertner, Filter Kai-Status).
+kai_pfoertner_wake_on_login: false
 kai_pfoertner_login_window: ""
 # Statusseite fuer Nutzer (nur lesend: Zustand der GPU-Maschine und der Dienste), http://<kai-entry>:8082/.
 # Eigener Port, weil der Hauptport Modellanfragen weiterreicht und intern bleibt; Zugang begrenzt die

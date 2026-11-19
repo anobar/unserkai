@@ -103,6 +103,7 @@
       KAI_LITELLM_PORT={{ kai_litellm_port }}
       KAI_MODELS_DIR={{ kai_entry_models_dir }}
       KAI_CPU_MEM_LIMIT={{ kai_entry_cpu_mem_limit }}
+      KAI_TASK_MODEL={{ (kai_entry_cpu_models | map(attribute='name') | first) if kai_entry_cpu_models | length > 0 else '' }}
     dest: "{{ kai_entry_install_dir }}/stack.env"
     owner: root
     group: root

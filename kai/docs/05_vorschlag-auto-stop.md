@@ -317,7 +317,7 @@ Nicht geprüft, weil nur in AWS möglich: echtes `StartInstances`/`StopInstances
 ## 10. Offene Entscheidungen
 
 1. Leerlaufzeit (Vorschlag 30 min) und Mindestlaufzeit (Vorschlag 10 min).
-2. Frühstart bei Anmeldung: ja oder nein; wenn ja, rund um die Uhr oder nur tagsüber.
+2. Frühstart bei Anmeldung: ja oder nein; wenn ja, rund um die Uhr oder nur tagsüber. Entschieden 19.11.: nein (`kai_pfoertner_wake_on_login: false`), seit es das CPU-Modell auf `kai-entry` und externe Modelle gibt; eine Anmeldung sagt nicht mehr, dass `kai1` gebraucht wird. Geweckt wird nur durch eine Anfrage an ein GPU-Modell.
 3. Sicherheitsnetz: CloudWatch-Alarm (empfohlen) oder nächtlicher Zwangsstopp.
 4. gp3-Durchsatz von `kai-models`: 125 (heute), 250 oder 400 MiB/s.
 5. API-Nutzer beim Kaltstart: Anfrage festhalten (empfohlen) oder sofort 503 mit „bitte in 3 min erneut“.

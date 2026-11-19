@@ -22,6 +22,11 @@ services:
       # Sends X-OpenWebUI-User-Id/-Email/-Name/-Role to LiteLLM, which books the tokens on that user
       # (user_header_mappings in litellm.yaml); the shared key open-webui stays the same.
       ENABLE_FORWARD_USER_INFO_HEADERS: "true"
+      # Hintergrundaufgaben (Titel, Tags, Suchanfragen) auf dem CPU-Modell statt auf dem Chat-Modell, damit sie
+      # kai-gpu nicht wecken; Autocomplete feuert bei jedem Tastendruck und bleibt aus. Open WebUI nimmt diese
+      # Werte nur, solange die Datenbank keinen eigenen Wert hat; sonst setzt sie kai-bootstrap --task-model.
+      TASK_MODEL_EXTERNAL: ${KAI_TASK_MODEL:-}
+      ENABLE_AUTOCOMPLETE_GENERATION: "false"
     # Der Filter "Kai-Status" fragt den Pfoertner auf dem Host (kai-pfoertner, Bridge-Adresse der Maschine).
     extra_hosts:
       - "kai-pfoertner:host-gateway"
