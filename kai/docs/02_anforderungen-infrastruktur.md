@@ -8,7 +8,7 @@ Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ bl
 
 | | Anforderung | Stufe |
 |---|---|---|
-| 1.1 | **`kai-entry`** ist `webui1` (`i-0f6dc684ea90b09cf`), wie von Uwe angelegt (Region `eu-central-1`, Zone `eu-central-1b`, x86_64). Gewünschte Größe `t3.medium` (2 vCPU, 4 GB RAM): die heutigen 939 MB reichen nicht für Open WebUI, LiteLLM und Postgres; Uwe hat die Vergrößerung angeboten | Muss |
+| 1.1 | **`kai-entry`** ist `webui1` (`i-0f6dc684ea90b09cf`), wie von Uwe angelegt (Region `eu-central-1`, Zone `eu-central-1b`, x86_64). Größe `t3.medium` (2 vCPU, 4 GB RAM), erfüllt (geprüft 19.11.); die 939 MB des `t3.micro` reichten nicht für Open WebUI, LiteLLM und Postgres | Muss |
 | 1.2 | **System, beide Maschinen:** Debian 13 (trixie), amd64, das offizielle Image des Debian-Projekts in AWS (Konto `136693071363`, Name `debian-13-amd64-<Build>`), Kernel-Flavour `cloud-amd64`, cloud-init (Uwe und Axel, 06.11.); die Rollen sprechen `apt` wie im Heimnetz (Entscheidung E10 in [01 §6](01_architektur.md)). Beide Instanzen laufen auf Build 20261103-2651 (`ami-04e9b382a9b6299a6`, [Bestandsaufnahme §2](instance_specs.md)); bei einem Wechsel bitte Bescheid geben, damit `kai-entry-pre` und `kai-gpu-pre` das Cloud-Image desselben Builds bekommen | gesetzt |
 | 1.3 | **`kai-gpu`** ist `kai1` (`i-0f896ee21e1ae8c72`): `g4dn.xlarge` (1× T4 16 GB, 4 vCPU, 16 GB RAM), dieselbe Zone wie das Volume `kai-models` | Muss |
 | 1.4 | **Treiber `kai-gpu`:** keiner im Image; die Rolle `kai_gpu` installiert ihn wie auf Axels GPU-Rechner aus NVIDIAs CUDA-Repo für Debian 13 (`cuda-keyring`, Header `linux-headers-cloud-amd64` zum laufenden Kernel, `nvidia-driver-cuda` mit dem Open-Kernel-Modul `nvidia-kernel-open-dkms`, `nvidia-container-toolkit` aus demselben Repo) im Zweig 620, dem Long Term Support Branch bis 09/2029, festgehalten mit `nvidia-driver-pinning-620`; Debians eigener Treiber (550) ist für das `cuda13`-Image von llama-swap zu alt (braucht ≥ 580). Für Uwe nichts zu tun | gesetzt |
@@ -45,7 +45,7 @@ Was die beiden Stacks von ihren Maschinen und dem Umfeld brauchen. „Muss“ bl
 | `github.com` | Repo-Checkout für die Administration | kai-entry |
 | `api.search.brave.com` | Websuche (MCP) | kai-entry |
 | `api.openai.com`, `api.anthropic.com` | externe Modelle über LiteLLM, erst nach Beschluss des Teams | kai-entry, später |
-| `huggingface.co`, `*.hf.co` (CDN) | Modell-Download (einmalig pro Modell, 10–15 GB) | kai-gpu |
+| `huggingface.co`, `*.hf.co` (CDN) | Modell-Download (einmalig pro Modell, 10–15 GB; CPU-Modell für kai-entry 1,1 GB) | kai-gpu, kai-entry |
 | `developer.download.nvidia.com` | NVIDIA-Treiber und Container Toolkit (CUDA-Repo für Debian 13) | kai-gpu |
 
 Alles andere kann ausgehend geblockt werden.

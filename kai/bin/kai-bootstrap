@@ -34,6 +34,7 @@ Steps:
   1. litellm-key: Generate/verify LiteLLM key for Open WebUI
   2. admin: Create or authenticate admin account
   3. openai-connection: Set Open WebUI's LiteLLM connection and key
+  3a. task-model: Point Open WebUI's background tasks at --task-model (e.g. the CPU model), autocomplete off
   4. users: Create user accounts from users-file
   4a. litellm-users: Create a LiteLLM internal_user per users-file line and for the admin
       (user_id = e-mail, so Open WebUI's e-mail header and harness keys book on the same user)
@@ -75,6 +76,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--filter-file', default='/opt/kai/kai_status_filter.py',
                         help='Open WebUI filter "Kai-Status" (shows the start progress of kai-gpu)')
     parser.add_argument('--brave-url', default='http://brave-mcp:8000/mcp', help='Brave MCP URL')
+    parser.add_argument('--task-model', default='',
+                        help='LiteLLM model for Open WebUI background tasks (titles, tags, queries); empty = skip')
     parser.add_argument('--dry-run', action='store_true', help='Print what would happen, change nothing')
     parser.add_argument('--apply-compose', action='store_true', help='Run docker compose after .env changes')
     parser.add_argument('--skip', action='append', default=[], help='Skip a step (repeatable)')
@@ -382,6 +385,41 @@ def step_openai_connection(args: argparse.Namespace, state: Dict[str, Any]) -> T
     if status != 200:
         return (False, 'failed to update the OpenAI connection')
     return (True, 'connection set to LiteLLM')
+
+
+def step_task_model(args: argparse.Namespace, state: Dict[str, Any]) -> Tuple[bool, str]:
+    """Point Open WebUI's background tasks (titles, tags, search queries) at --task-model and turn autocomplete off.
+
+    Without it every title generation goes to the chat's own model and, through the gatekeeper, wakes kai-gpu.
+    """
+    if 'task-model' in args.skip:
+        return (True, 'skipped by user')
+    if not args.task_model:
+        return (True, 'skipped: no --task-model')
+    if not state.get('admin_token'):
+        return (True, 'skipped: no admin token available')
+
+    token = state['admin_token']
+    status, cfg = http_request(f'{args.webui_url}/api/v1/tasks/config', bearer_token=token)
+    if status != 200 or not isinstance(cfg, dict):
+        return (False, 'failed to get the task config')
+
+    if cfg.get('TASK_MODEL_EXTERNAL') == args.task_model and not cfg.get('ENABLE_AUTOCOMPLETE_GENERATION', True):
+        return (True, 'task model already set')
+
+    if args.dry_run:
+        print(f'[DRY] task-model: would set TASK_MODEL_EXTERNAL={args.task_model}')
+        return (True, 'dry run')
+
+    cfg['TASK_MODEL_EXTERNAL'] = args.task_model
+    # Autocomplete fires on every keystroke; on a CPU model it would make the prompt box crawl.
+    cfg['ENABLE_AUTOCOMPLETE_GENERATION'] = False
+    status, _ = http_request(
+        f'{args.webui_url}/api/v1/tasks/config/update', method='POST', data=cfg, bearer_token=token
+    )
+    if status != 200:
+        return (False, 'failed to update the task config')
+    return (True, f'task model set to {args.task_model}')
 
 
 def read_users_file(path: str) -> List[Tuple[str, str]]:
@@ -744,6 +782,7 @@ def main() -> None:
         ('litellm-key', step_litellm_key),
         ('admin', step_admin),
         ('openai-connection', step_openai_connection),
+        ('task-model', step_task_model),
         ('users', step_users),
         ('litellm-users', step_litellm_users),
         ('brave-tool', step_brave_tool),

@@ -16,6 +16,16 @@ model_list:
       timeout: {{ kai_litellm_request_timeout }}
       stream_timeout: {{ kai_litellm_request_timeout }}
 {% endfor %}
+{% for m in kai_entry_cpu_models | default([]) %}
+  - model_name: {{ m.name }}
+    litellm_params:
+      model: openai/{{ m.name }}
+      # CPU-Modell auf dieser Maschine (compose.cpu.yaml), nicht ueber den Pfoertner: weckt kai-gpu nie.
+      api_base: http://llama-swap:8080/v1
+      api_key: os.environ/LLAMA_SWAP_KEY
+      timeout: {{ kai_litellm_request_timeout }}
+      stream_timeout: {{ kai_litellm_request_timeout }}
+{% endfor %}
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

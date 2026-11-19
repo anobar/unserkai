@@ -1,0 +1,23 @@
+# llama-swap (CPU) fuer {{ inventory_hostname }}; von Ansible aus kai_entry_cpu_models erzeugt.
+# Jede Anfrage braucht diesen Key (kai/docs/08_haertung.md M7); fehlt die Variable, startet llama-swap nicht.
+apiKeys:
+  - ${env.LLAMA_SWAP_KEY}
+healthCheckTimeout: {{ kai_entry_cpu_health_check_timeout | default(300) }}
+logLevel: info
+models:
+{% for m in kai_entry_cpu_models %}
+  {{ m.name }}:
+    # nice: niedrige Prioritaet innerhalb des Containers; gegen die anderen Container wirkt cpu_shares (compose.cpu.yaml).
+    # KV-Cache q8_0 halbiert den Speicher fuer den Kontext; -ngl 0 = alles auf der CPU.
+    cmd: >
+      nice -n {{ m.nice | default(15) }} llama-server --host 127.0.0.1 --port ${PORT}
+      --model /models/{{ m.file }}
+      --ctx-size {{ m.ctx_size }} --parallel {{ m.parallel | default(1) }} --threads {{ m.threads | default(2) }}
+      -fa on --jinja -ngl 0
+      --cache-type-k q8_0 --cache-type-v q8_0
+{% if m.enable_thinking is defined %}
+      --chat-template-kwargs '{"enable_thinking":{{ m.enable_thinking | bool | lower }}}'
+{% endif %}
+    # Nach ttl Sekunden ohne Anfrage wird das Modell entladen und der RAM frei; der naechste Aufruf laedt es neu (~12 s).
+    ttl: {{ m.ttl | default(600) }}
+{% endfor %}

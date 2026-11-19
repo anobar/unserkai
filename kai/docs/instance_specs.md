@@ -1,6 +1,6 @@
 # Bestandsaufnahme der Instanzen `kai-entry` und `kai-gpu`
 
-Erhoben am 2026-11-07 über SSM-Sitzung (Standard-Shell-Dokument) und EC2-API mit der Rolle `ssm-session-access-axel`; beide Instanzen dafür gestartet und danach wieder gestoppt. Zweck: Maßstab für die Rollen und für die Test-VMs `kai-entry-pre` und `kai-gpu-pre` ([04 Plan, Phase 2.0](04_plan.md)). Uwe hat beide Maschinen am 06.11. bereitgestellt.
+Erhoben am 2026-11-07 über SSM-Sitzung (Standard-Shell-Dokument) und EC2-API mit der Rolle `ssm-session-access-axel`; beide Instanzen dafür gestartet und danach wieder gestoppt. Nachtrag 2026-11-19: `kai-entry` neu erhoben (Typ, RAM, Platten); `kai-gpu` war gestoppt, dort nur der Typ aus der EC2-API. Zweck: Maßstab für die Rollen und für die Test-VMs `kai-entry-pre` und `kai-gpu-pre` ([04 Plan, Phase 2.0](04_plan.md)). Uwe hat beide Maschinen am 06.11. bereitgestellt.
 
 ## 1. Instanzen (EC2-API und IMDS)
 
@@ -8,12 +8,12 @@ Erhoben am 2026-11-07 über SSM-Sitzung (Standard-Shell-Dokument) und EC2-API mi
 |---|---|---|
 | Instanz-ID | `i-0f6dc684ea90b09cf` | `i-0f896ee21e1ae8c72` |
 | Tags | `Name=webui1`, `SSMAccess=true` | `Name=kai1`, `SSMAccess=true` |
-| Typ | `t3.micro`: 2 vCPU (1 Kern mit Hyperthreading, Xeon Platinum 8175M), 939 MB RAM | `g4dn.xlarge`: 4 vCPU (2 Kerne mit Hyperthreading, Xeon Platinum 8259CL), 15,3 GiB RAM, 1× Tesla T4 |
+| Typ | `t3.medium` (Stand 19.11., am 07.11. noch `t3.micro`): 2 vCPU (1 Kern mit Hyperthreading, Xeon Platinum 8175M, AVX-512), 3862 MB RAM, kein Swap; im Betrieb belegt der Stack 2,3 GB (LiteLLM 1 GB, Open WebUI 0,7 GB), frei 1,5 GB | `g4dn.xlarge`: 4 vCPU (2 Kerne mit Hyperthreading, Xeon Platinum 8259CL), 15,3 GiB RAM, 1× Tesla T4 |
 | Image | `ami-04e9b382a9b6299a6` | dasselbe |
 | Zone | `eu-central-1b`, x86_64 | dieselbe |
 | Boot | Legacy-BIOS (`CurrentInstanceBootMode=legacy-bios`), GRUB `i386-pc`; kein UEFI, kein Secure Boot | dasselbe |
-| Root-Volume | EBS 20 GB `vol-0d61b13d20663e349`, `DeleteOnTermination=true` | EBS 20 GB `vol-0141318f49efc45b7`, `DeleteOnTermination=true` |
-| Weitere Platten | keine | EBS 150 GB `vol-0b351d3718d5b2104` als `/dev/sdf`, `DeleteOnTermination=false`, ohne Dateisystem; lokale NVMe (Instance Storage) 116,4 GiB |
+| Root-Volume | EBS 30 GB (Stand 19.11., am 07.11. noch 20 GB; 12 GB belegt) `vol-0d61b13d20663e349`, `DeleteOnTermination=true` | EBS 20 GB `vol-0141318f49efc45b7`, `DeleteOnTermination=true` am 07.11.; 30 GB laut [02 §1.7](02_anforderungen-infrastruktur.md), am 19.11. nicht geprüft (gestoppt) |
+| Weitere Platten | EBS 20 GB `vol-040ff91a9877e45cf` als `kai-data` auf `/opt/kai` (seit 10.11.; 1,4 GB belegt) | EBS 150 GB `vol-0b351d3718d5b2104` als `/dev/sdf`, `DeleteOnTermination=false`, ohne Dateisystem; lokale NVMe (Instance Storage) 116,4 GiB |
 | Instanzprofil | `terraform/webui1` | `terraform/kai1` |
 | Security Group | `webui1` | `kai1` |
 | Netz | privates Subnetz `/20`, keine öffentliche IPv4, kein IPv6, Hostname nach Muster `ip-…` | dasselbe |
@@ -63,12 +63,12 @@ Nicht einsehbar, weil der Rolle `ec2:DescribeImages`, `ec2:DescribeVolumes` und 
 
 | Punkt | Stand am 07.11. |
 |---|---|
-| §1.1 `kai-entry` als `t3.medium` | offen: `t3.micro` mit 939 MB RAM |
+| §1.1 `kai-entry` als `t3.medium` | erfüllt (Stand 19.11.; am 07.11. `t3.micro` mit 939 MB RAM) |
 | §1.2 Debian 13, Build | erfüllt: Build 20261103-2651 |
 | §1.3 `kai-gpu` als `g4dn.xlarge` in der Zone des Volumes | erfüllt |
 | §1.5 Benutzer `admin` mit sudo ohne Passwort | erfüllt |
 | §1.6 Tags `Name=kai-entry`/`kai-gpu`, `kai:role` | offen: `Name=webui1`/`kai1`, kein `kai:role` |
-| §1.7 Root 30 GB | offen: 20 GB auf beiden |
+| §1.7 Root 30 GB | `kai-entry` erfüllt (Stand 19.11.); `kai-gpu` 30 GB, Ziel 50 GB offen ([04 Plan, offener Punkt 3](04_plan.md)) |
 | §2.1 Volume `kai-data` | offen: kein zweites Volume an `kai-entry` |
 | §2.2, §2.3 Volume `kai-models` 150 GB, bleibt beim Terminieren | erfüllt (Typ gp3 nicht prüfbar) |
 | §3.1 Egress | erfüllt, ohne Allowlist |
@@ -83,8 +83,8 @@ Nicht einsehbar, weil der Rolle `ec2:DescribeImages`, `ec2:DescribeVolumes` und 
 
 1. Das `genericcloud`-Image 20261103-2651 bleibt die richtige Basis: gleiche Pakete und Versionen wie die Instanzen bis auf die 15 Pakete aus §2 und `amazon-ssm-agent`, die keine Rolle braucht.
 2. Die Instanzen booten per Legacy-BIOS über die BIOS-Boot-Partition, nicht per UEFI; mit SeaBIOS statt OVMF nimmt die Test-VM denselben Bootpfad aus demselben Image, und Secure Boot spielt auf keiner Seite eine Rolle.
-3. Root ist auf den Instanzen 20 GB, nicht 30 GB; solange Uwe nicht vergrößert (02 §1.7), zeigt eine Test-VM mit 20 GB, ob Images und Treiber auf Root passen.
-4. `kai-entry` hat heute 939 MB RAM; die Test-VM `kai-entry-pre` bildet mit 4 GiB das Ziel `t3.medium` ab, nicht den Ist-Stand.
+3. Root war am 07.11. auf beiden Instanzen 20 GB; `kai-entry` hat am 19.11. 30 GB, und die Test-VM mit 20 GB bleibt der strengere Maßstab dafür, ob Images und Treiber auf Root passen.
+4. `kai-entry` ist am 19.11. `t3.medium` mit 3,9 GB RAM; die Test-VM `kai-entry-pre` bildet das mit 4 GiB ab. Neben dem Stack bleiben 1,5 GB, davon lebt das CPU-Modell (`kai_entry_cpu_models`, hartes Limit 1,6 GB).
 5. Die Test-VMs übernehmen aus der user-data nur `/etc/apt/apt.conf.d/99force-ipv4`; den Rest (SSM-Agent, `ssm-user`) gibt es nur in AWS.
 6. Der Standard-Benutzer `admin` entsteht in der Test-VM mit denselben Gruppen und `sudo` wie in `01_debian_cloud.cfg` (§2), nicht mit dem `default`-Benutzer `debian` des genericcloud-Images.
 7. Die Instanzen holen Pakete von `cdn-aws.deb.debian.org`, die Test-VMs von `deb.debian.org`; beides liegt unter `.debian.org`, die Paketstände sind dieselben.
