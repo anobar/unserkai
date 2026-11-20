@@ -66,7 +66,7 @@ footer { color: var(--muted); font-size: 9.5px; display: flex; justify-content: 
 <header>
   <div>
     <h1>Kai Modellkarten</h1>
-    <p class="sub">Alle Modelle im Dropdown von Open WebUI. Stand 20.11.2026, Konfiguration aus <span style="font-family:var(--mono)">ansible/inventory</span> (host_vars kai1, group_vars kai_entry).</p>
+    <p class="sub">Alle Modelle im Dropdown von Open WebUI. Stand 20.11.2026, Konfiguration aus <span style="font-family:var(--mono)">ansible/inventory</span> (host_vars kai1, group_vars kai_entry). Tempo gemessen am 20.11. von webui1 aus: gleiche deutsche Frage, zwei Aufrufe je Modell; „erstes Token“ ist der Beginn der Ausgabe, bei Modellen mit Denkphase liegt der sichtbare Text einige Sekunden dahinter.</p>
   </div>
   <div class="legend">
     <span class="badge b-gpu">kai1 · GPU, bei Bedarf an</span>
@@ -89,9 +89,9 @@ footer { color: var(--muted); font-size: 9.5px; display: flex; justify-content: 
   <div class="ep">LiteLLM: <span>openai/gpt-oss-20b</span> → http://kai-pfoertner:8081/kai1/v1 → kai1.unserkai.de:8080</div>
   <div class="pm">
     <div><h3>Stärken</h3><ul><li>Allrounder mit Denkphase (reasoning medium)</li><li>Werkzeuge zuverlässig, auch Brave-Suche</li><li>Deutsch gut, 32k Kontext für lange Dokumente</li><li>Daten bleiben in Kai (AWS Frankfurt)</li></ul></div>
-    <div><h3>Schwächen</h3><ul><li>Kein Bildverständnis</li><li>Kaltstart ~3 min, wenn kai1 aus ist</li><li>GPU-Stunden kosten Geld</li><li>Schreibt sachlich-knapp</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Kein Bildverständnis</li><li>Kaltstart rund 2 min, wenn kai1 aus ist (gemessen 130 s bis zur Antwort)</li><li>GPU-Stunden kosten Geld</li><li>Schreibt sachlich-knapp</li></ul></div>
   </div>
-  <div class="meta"><span>Kontext <b>32k</b></span><span>Tempo <b>~25–40 Tok/s</b> (T4, erwartet)</span><span>Bilder <b>nein</b></span></div>
+  <div class="meta"><span>Kontext <b>32k</b></span><span>Erstes Token <b>0,2 s</b> warm, Text nach 2–5 s Denkphase</span><span>Tempo <b>58 Tok/s</b></span><span>Bilder <b>nein</b></span></div>
 </article>
 
 <article class="card cpu">
@@ -102,7 +102,7 @@ footer { color: var(--muted); font-size: 9.5px; display: flex; justify-content: 
     <div><h3>Stärken</h3><ul><li>Immer da, antwortet in Sekunden</li><li>Weckt kai1 nicht, kostet nichts extra</li><li>Daten bleiben in Kai</li><li>Erledigt im Hintergrund Titel und Tags der Chats</li></ul></div>
     <div><h3>Schwächen</h3><ul><li>Klein: wenig Wissen, erfindet Fakten</li><li>Nur 4k Kontext, keine Denkphase</li><li>Lange Eingaben langsam: 1k Tokens 30 s, 3k 2 min</li><li>Keine Bilder, Werkzeuge unzuverlässig</li></ul></div>
   </div>
-  <div class="meta"><span>Kontext <b>4k</b></span><span>Tempo <b>8 Tok/s</b>, erstes Token 1 s (gemessen 19.11.)</span><span>Bilder <b>nein</b></span></div>
+  <div class="meta"><span>Kontext <b>4k</b></span><span>Erstes Token <b>0,2 s</b> warm, 15 s wenn das Modell erst geladen wird</span><span>Tempo <b>7,6 Tok/s</b></span><span>Bilder <b>nein</b></span></div>
 </article>
 
 <article class="card ext">
@@ -113,7 +113,7 @@ footer { color: var(--muted); font-size: 9.5px; display: flex; justify-content: 
     <div><h3>Stärken</h3><ul><li>Funktioniert weiter, wenn OpenRouter die freie Auswahl ändert</li><li>Gute Wahl, wenn ein bestimmtes Modell „busy“ meldet</li><li>Bilder möglich</li></ul></div>
     <div><h3>Schwächen</h3><ul><li>Nicht vorhersagbar, welches Modell antwortet</li><li>Qualität schwankt von Frage zu Frage</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
   </div>
-  <div class="meta"><span>Kontext <b>bis 200k</b></span><span>Limit <b>50/Tag gemeinsam</b></span><span>Bilder <b>je nach Modell</b></span></div>
+  <div class="meta"><span>Kontext <b>bis 200k</b></span><span>Erstes Token <b>0,5–1,1 s</b></span><span>Tempo <b>50–160 Tok/s</b>, je nach gewähltem Modell</span><span>Bilder <b>je nach Modell</b></span></div>
 </article>
 
 <article class="card ext">
@@ -124,7 +124,7 @@ footer { color: var(--muted); font-size: 9.5px; display: flex; justify-content: 
     <div><h3>Stärken</h3><ul><li>Reasoning auf Frontier-Niveau, schwere Aufgaben</li><li>Werkzeuge und mehrstufige Aufgaben</li><li>1M Kontext: ganze Dokumentensammlungen</li></ul></div>
     <div><h3>Schwächen</h3><ul><li>Nur Text, keine Bilder</li><li>Lange Denkphasen, Antwort dauert</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
   </div>
-  <div class="meta"><span>Kontext <b>1M</b></span><span>Antwort max. <b>64k</b></span><span>Bilder <b>nein</b></span></div>
+  <div class="meta"><span>Kontext <b>1M</b></span><span>Erstes Token <b>0,8 s</b></span><span>Tempo <b>32–67 Tok/s</b></span><span>Bilder <b>nein</b></span></div>
 </article>
 
 <article class="card ext">
@@ -133,20 +133,20 @@ footer { color: var(--muted); font-size: 9.5px; display: flex; justify-content: 
   <div class="ep">LiteLLM: <span>openrouter/google/gemma-4-31b-it:free</span> → https://openrouter.ai/api/v1</div>
   <div class="pm">
     <div><h3>Stärken</h3><ul><li>Bilder und Fotos erklären</li><li>Natürliche Alltagssprache, mehrsprachig</li><li>256k Kontext</li></ul></div>
-    <div><h3>Schwächen</h3><ul><li>Dichtes Modell, langsamer als die MoE-Nachbarn</li><li>Antwort höchstens 32k Tokens</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Läuft bei Google im geteilten Pool: am 20.11. jede Anfrage „429, rate-limited upstream“, keine Messung möglich</li><li>Dichtes Modell, langsamer als die MoE-Nachbarn</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
   </div>
-  <div class="meta"><span>Kontext <b>256k</b></span><span>Antwort max. <b>32k</b></span><span>Bilder <b>ja</b>, Video ja</span></div>
+  <div class="meta"><span>Kontext <b>256k</b></span><span>Erstes Token <b>nicht messbar</b> (429)</span><span>Bilder <b>ja</b>, Video ja</span></div>
 </article>
 
 <article class="card ext">
-  <div class="name"><code>gemma-4-26b-a4b-openrouter</code><span class="badge b-ext">extern</span></div>
-  <div class="where">Google Gemma 4 26B A4B, MoE mit 3,8B aktiven Parametern; die schnelle Schwester des 31B mit Text, Bild und Video.</div>
-  <div class="ep">LiteLLM: <span>openrouter/google/gemma-4-26b-a4b-it:free</span> → https://openrouter.ai/api/v1</div>
+  <div class="name"><code>nemotron-3.5-lightning-openrouter</code><span class="badge b-ext">extern</span></div>
+  <div class="where">NVIDIA Nemotron 3.5 Lightning, 30B (3B aktiv), MoE für hohen Durchsatz; das schnellste Modell der Liste, nur Text.</div>
+  <div class="ep">LiteLLM: <span>openrouter/nvidia/nemotron-3.5-lightning:free</span> → https://openrouter.ai/api/v1</div>
   <div class="pm">
-    <div><h3>Stärken</h3><ul><li>Schnelle Antworten für Alltagsfragen</li><li>Bilder möglich</li><li>256k Kontext</li></ul></div>
-    <div><h3>Schwächen</h3><ul><li>Etwas schwächer als gemma-4-31b bei schweren Aufgaben</li><li>Antwort höchstens 32k Tokens</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
+    <div><h3>Stärken</h3><ul><li>Sehr schnell, für Alltagsfragen und viele kurze Aufgaben</li><li>Werkzeuge, 1M Kontext</li><li>Antwortete am 20.11. zuverlässig, während Gemma 429 gab</li></ul></div>
+    <div><h3>Schwächen</h3><ul><li>Nur Text, keine Bilder</li><li>Denkphase vor der Antwort, sichtbarer Text nach ~4 s</li><li>Kleiner als Ultra, Daten extern, Deutsch nicht geprüft</li></ul></div>
   </div>
-  <div class="meta"><span>Kontext <b>256k</b></span><span>Antwort max. <b>32k</b></span><span>Bilder <b>ja</b>, Video ja</span></div>
+  <div class="meta"><span>Kontext <b>1M</b></span><span>Erstes Token <b>0,2 s</b></span><span>Tempo <b>130–150 Tok/s</b></span><span>Bilder <b>nein</b></span></div>
 </article>
 
 <article class="card ext">
@@ -157,13 +157,13 @@ footer { color: var(--muted); font-size: 9.5px; display: flex; justify-content: 
     <div><h3>Stärken</h3><ul><li>Dokumente, Tabellenfotos und Screenshots auslesen</li><li>Video verstehen</li><li>1M Kontext, Antwort bis 128k</li></ul></div>
     <div><h3>Schwächen</h3><ul><li>Für reine Textfragen kein Vorteil gegenüber Ultra oder Gemma</li><li>Daten extern, Deutsch nicht geprüft</li></ul></div>
   </div>
-  <div class="meta"><span>Kontext <b>1M</b></span><span>Antwort max. <b>128k</b></span><span>Bilder <b>ja</b>, Video ja</span></div>
+  <div class="meta"><span>Kontext <b>1M</b></span><span>Erstes Token <b>0,4 s</b>, Text nach ~3,5 s Denkphase</span><span>Tempo <b>110–135 Tok/s</b></span><span>Bilder <b>ja</b>, Video ja</span></div>
 </article>
 
 </section>
 
 <footer>
-  <span>Quellen: host_vars/kai1.yml, group_vars/kai_entry.yml, kai/docs/03_modellvorschlag.md, Messung 19.11. (kai_entry.yml), OpenRouter-Katalog https://openrouter.ai/api/v1/models vom 20.11.2026.</span>
+  <span>Quellen: host_vars/kai1.yml, group_vars/kai_entry.yml, kai/docs/03_modellvorschlag.md, Messungen 19./20.11. von webui1 aus, OpenRouter-Katalog https://openrouter.ai/api/v1/models vom 20.11.2026.</span>
   <span>Die freie Liste bei OpenRouter wechselt oft; verschwindet ein Modell, antwortet LiteLLM mit einem Fehler, die Karte wird mit der Modellliste geändert.</span>
 </footer>
 </div>
