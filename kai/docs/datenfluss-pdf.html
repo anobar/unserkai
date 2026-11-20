@@ -46,7 +46,7 @@ p { margin: 0; max-width: 70ch; }
 .lead { color: var(--muted); }
 code, .mono { font-family: var(--mono); font-size: .9em; }
 .figure { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
-.figure svg { display: block; min-width: 900px; width: 100%; height: auto; }
+.figure svg { display: block; min-width: 1050px; width: 100%; height: auto; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
@@ -98,13 +98,13 @@ footer { color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">Kai · Stand der Konfiguration im Repo, Branch kai-aws-deploy · 08.11.2026</div>
+  <div class="eyebrow">Kai · Stand der Konfiguration im Repo, Branch kai-updates · 11.11.2026</div>
   <h1>Ein PDF in Open WebUI hochladen und dazu fragen: wohin gehen die Daten?</h1>
-  <p class="lead">Der Weg vom Browser auf dem Heimgerät über <span class="mono">webui1</span> (Open WebUI, LiteLLM) zu <span class="mono">kai1</span> (llama-swap, llama-server mit llama.cpp auf der T4) und zurück. Dazu jede Stelle, an der etwas liegen bleibt, mit Medium und Dauer.</p>
+  <p class="lead">Der Weg vom Browser auf dem Heimgerät über <span class="mono">webui1</span> (Open WebUI, LiteLLM, Pförtner) zu <span class="mono">kai1</span> (llama-swap, llama-server mit llama.cpp auf der T4) und zurück. Dazu jede Stelle, an der etwas liegen bleibt, mit Medium und Dauer.</p>
 </header>
 
 <div class="figure">
-<svg viewBox="0 0 1080 560" role="img" aria-label="Datenfluss vom Browser über webui1 zu kai1 und zurück, mit Speicherorten">
+<svg viewBox="0 0 1260 560" role="img" aria-label="Datenfluss vom Browser über webui1 (Open WebUI, LiteLLM, Pförtner) zu kai1 und zurück, mit Speicherorten">
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
     <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahr"/></marker>
@@ -113,13 +113,13 @@ footer { color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
 
   <rect class="z" x="12" y="70" width="210" height="476" rx="10"/>
   <text class="zt" x="28" y="92">HEIMGERÄT</text>
-  <rect class="z" x="240" y="70" width="400" height="476" rx="10"/>
-  <text class="zt" x="256" y="92">WEBUI1 · kai-entry · AWS eu-central-1</text>
-  <rect class="z" x="658" y="70" width="410" height="476" rx="10"/>
-  <text class="zt" x="674" y="92">KAI1 · kai-gpu · g4dn.xlarge, T4</text>
+  <rect class="z" x="240" y="70" width="580" height="476" rx="10"/>
+  <text class="zt" x="256" y="92">WEBUI1 · kai-entry · AWS eu-central-1 · läuft durch</text>
+  <rect class="z" x="838" y="70" width="410" height="476" rx="10"/>
+  <text class="zt" x="854" y="92">KAI1 · kai-gpu · g4dn.xlarge, T4 · nur an bei Bedarf</text>
 
-  <path class="ret" d="M955 112 V44 H117 V112" marker-end="url(#ar)"/>
-  <text class="retl" x="380" y="36">8 · Antwort Token für Token zurück (Stream)</text>
+  <path class="ret" d="M1135 112 V44 H117 V112" marker-end="url(#ar)"/>
+  <text class="retl" x="420" y="36">9 · Antwort Token für Token zurück (Stream), durch Pförtner, LiteLLM, Open WebUI</text>
 
   <rect class="b" x="32" y="116" width="170" height="100" rx="8"/>
   <text class="bt" x="46" y="142">Browser</text>
@@ -148,83 +148,94 @@ footer { color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
   <text class="bs" x="278" y="216">(MiniLM auf der CPU)</text>
   <circle class="num" cx="430" cy="128" r="10"/><text class="numt" x="426" y="132">2</text>
 
-  <rect class="b" x="470" y="116" width="150" height="120" rx="8"/>
+  <rect class="b" x="470" y="116" width="134" height="120" rx="8"/>
   <text class="bt" x="484" y="142">LiteLLM :4000</text>
   <text class="bs" x="484" y="162">prüft den Key</text>
   <text class="bs" x="484" y="180">zählt Token</text>
-  <text class="bs" x="484" y="198">leitet weiter</text>
+  <text class="bs" x="484" y="198">leitet weiter an</text>
+  <text class="bs" x="484" y="216">den Pförtner</text>
   <path class="fl" d="M444 160 H468" marker-end="url(#a)"/>
   <circle class="num" cx="456" cy="146" r="10"/><text class="numt" x="452" y="150">3</text>
 
-  <rect class="ram" x="264" y="252" width="356" height="46" rx="6"/>
-  <text class="ramt hd" x="276" y="271">RAM webui1</text>
-  <text class="ramt" x="276" y="288">PDF, Text und Anfrage während der Verarbeitung: Sekunden</text>
+  <rect class="b" x="630" y="116" width="166" height="120" rx="8"/>
+  <text class="bt" x="644" y="142">Pförtner :8081</text>
+  <text class="bs" x="644" y="162">Host-Dienst, kein Container</text>
+  <text class="bs" x="644" y="180">startet kai1 bei Bedarf,</text>
+  <text class="bs" x="644" y="198">wartet, reicht durch;</text>
+  <text class="bs" x="644" y="216">stoppt kai1 nach 30 min Ruhe</text>
+  <path class="fl" d="M604 160 H628" marker-end="url(#a)"/>
+  <circle class="num" cx="616" cy="146" r="10"/><text class="numt" x="612" y="150">4</text>
 
-  <rect class="disk" x="264" y="312" width="356" height="196" rx="6"/>
+  <rect class="ram" x="264" y="252" width="532" height="46" rx="6"/>
+  <text class="ramt hd" x="276" y="271">RAM webui1</text>
+  <text class="ramt" x="276" y="288">PDF, Text, Anfrage beim Verarbeiten: Sekunden · Pförtner hält die ganze Anfrage, bis kai1 bereit ist: bis 9 min</text>
+
+  <rect class="disk" x="264" y="312" width="532" height="204" rx="6"/>
   <text class="diskt hd" x="276" y="332">EBS-Volume kai-data · /opt/kai/data</text>
   <text class="diskt" x="276" y="356">uploads/ · das PDF selbst</text>
   <text class="diskt" x="276" y="376">vector_db/ · Abschnitte + Vektoren</text>
-  <text class="diskt" x="276" y="396">webui.db · PDF-Text, Chat, Antwort,</text>
-  <text class="diskt" x="276" y="414">Quellen-Zitate, Titel, Tags</text>
-  <text class="diskt" x="276" y="438">litellm-db · Zeit, Modell, Token-Zahl,</text>
-  <text class="diskt" x="276" y="456">Konto, kein Text</text>
-  <text class="diskt hd" x="276" y="486">alles unbefristet, bis jemand löscht</text>
+  <text class="diskt" x="276" y="396">webui.db · PDF-Text, Chat, Antwort, Quellen-Zitate, Titel, Tags</text>
+  <text class="diskt" x="276" y="420">litellm-db · Zeit, Modell, Token-Zahl, Konto, kein Text</text>
+  <text class="diskt" x="276" y="444">Root-Volume: Pförtner-state.json (nur gelernte Startdauern),</text>
+  <text class="diskt" x="276" y="462">Journal (Phasen, Start/Stopp, kein Text), Docker-Logs (Zugriffszeilen)</text>
+  <text class="diskt hd" x="276" y="492">Nutzerdaten unbefristet, bis jemand löscht</text>
   <path class="st" d="M354 236 V250"/>
-  <path class="st" d="M545 236 V250"/>
+  <path class="st" d="M537 236 V250"/>
+  <path class="st" d="M713 236 V250"/>
   <path class="st" d="M354 298 V310" marker-end="url(#as)"/>
-  <path class="st" d="M545 298 V310" marker-end="url(#as)"/>
+  <path class="st" d="M537 298 V310" marker-end="url(#as)"/>
 
-  <path class="fl" d="M620 160 H690" marker-end="url(#a)"/>
-  <circle class="num" cx="655" cy="146" r="10"/><text class="numt" x="651" y="150">4</text>
-  <text class="lab" x="560" y="530">HTTP im VPC, ohne TLS: kai1.unserkai.de:8080</text>
+  <path class="fl" d="M796 160 H870" marker-end="url(#a)"/>
+  <circle class="num" cx="833" cy="146" r="10"/><text class="numt" x="829" y="150">5</text>
+  <text class="lab" x="740" y="530">HTTP im VPC, ohne TLS: kai1.unserkai.de:8080</text>
 
-  <rect class="b" x="692" y="116" width="160" height="120" rx="8"/>
-  <text class="bt" x="706" y="142">llama-swap :8080</text>
-  <text class="bs" x="706" y="162">wählt das Modell</text>
-  <text class="bs" x="706" y="180">startet llama-server</text>
-  <text class="bs" x="706" y="198">(beim 1. Mal 10–40 s)</text>
-  <circle class="num" cx="838" cy="128" r="10"/><text class="numt" x="834" y="132">5</text>
+  <rect class="b" x="872" y="116" width="160" height="120" rx="8"/>
+  <text class="bt" x="886" y="142">llama-swap :8080</text>
+  <text class="bs" x="886" y="162">wählt das Modell</text>
+  <text class="bs" x="886" y="180">startet llama-server</text>
+  <text class="bs" x="886" y="198">(beim 1. Mal 10–40 s)</text>
+  <circle class="num" cx="1018" cy="128" r="10"/><text class="numt" x="1014" y="132">6</text>
 
-  <rect class="b" x="876" y="116" width="176" height="120" rx="8"/>
-  <text class="bt" x="890" y="142">llama-server</text>
-  <text class="bs" x="890" y="162">llama.cpp, gpt-oss-20b</text>
-  <text class="bs" x="890" y="180">Prompt lesen (Prefill)</text>
-  <text class="bs" x="890" y="198">Antwort erzeugen</text>
-  <text class="bs" x="890" y="216">4 Slots, 32k Kontext</text>
-  <path class="fl" d="M852 160 H874" marker-end="url(#a)"/>
-  <circle class="num" cx="1038" cy="128" r="10"/><text class="numt" x="1034" y="132">6</text>
+  <rect class="b" x="1056" y="116" width="176" height="120" rx="8"/>
+  <text class="bt" x="1070" y="142">llama-server</text>
+  <text class="bs" x="1070" y="162">llama.cpp, gpt-oss-20b</text>
+  <text class="bs" x="1070" y="180">Prompt lesen (Prefill)</text>
+  <text class="bs" x="1070" y="198">Antwort erzeugen</text>
+  <text class="bs" x="1070" y="216">4 Slots, 32k Kontext</text>
+  <path class="fl" d="M1032 160 H1054" marker-end="url(#a)"/>
+  <circle class="num" cx="1218" cy="128" r="10"/><text class="numt" x="1214" y="132">7</text>
 
-  <rect class="ram" x="692" y="252" width="160" height="150" rx="6"/>
-  <text class="ramt hd" x="704" y="272">RAM kai1</text>
-  <text class="ramt" x="704" y="294">Capture-Puffer von</text>
-  <text class="ramt" x="704" y="311">llama-swap: letzte</text>
-  <text class="ramt" x="704" y="328">Anfragen + Antworten</text>
-  <text class="ramt" x="704" y="345">bis überschrieben</text>
-  <text class="ramt" x="704" y="372">Page-Cache: Modell-</text>
-  <text class="ramt" x="704" y="389">datei, keine Chats</text>
+  <rect class="ram" x="872" y="252" width="160" height="150" rx="6"/>
+  <text class="ramt hd" x="884" y="272">RAM kai1</text>
+  <text class="ramt" x="884" y="294">Capture-Puffer von</text>
+  <text class="ramt" x="884" y="311">llama-swap: letzte</text>
+  <text class="ramt" x="884" y="328">Anfragen + Antworten</text>
+  <text class="ramt" x="884" y="345">bis überschrieben</text>
+  <text class="ramt" x="884" y="362">oder kai1 stoppt</text>
+  <text class="ramt" x="884" y="389">Page-Cache: Modelldatei</text>
 
-  <rect class="vram" x="876" y="252" width="176" height="150" rx="6"/>
-  <text class="vramt hd" x="888" y="272">VRAM T4 16 GB</text>
-  <text class="vramt" x="888" y="294">Gewichte ~12 GB</text>
-  <text class="vramt" x="888" y="311">(keine Nutzerdaten)</text>
-  <text class="vramt" x="888" y="338">KV-Cache je Slot:</text>
-  <text class="vramt" x="888" y="355">der ganze Prompt</text>
-  <text class="vramt" x="888" y="372">bis Slot neu belegt</text>
-  <text class="vramt" x="888" y="389">oder Modell entladen</text>
-  <path class="st" d="M964 236 V250" marker-end="url(#as)"/>
-  <path class="st" d="M772 236 V250" marker-end="url(#as)"/>
+  <rect class="vram" x="1056" y="252" width="176" height="150" rx="6"/>
+  <text class="vramt hd" x="1068" y="272">VRAM T4 16 GB</text>
+  <text class="vramt" x="1068" y="294">Gewichte ~12 GB</text>
+  <text class="vramt" x="1068" y="311">(keine Nutzerdaten)</text>
+  <text class="vramt" x="1068" y="338">KV-Cache je Slot:</text>
+  <text class="vramt" x="1068" y="355">der ganze Prompt</text>
+  <text class="vramt" x="1068" y="372">bis Slot neu belegt,</text>
+  <text class="vramt" x="1068" y="389">spätestens Stopp von kai1</text>
+  <path class="st" d="M1144 236 V250" marker-end="url(#as)"/>
+  <path class="st" d="M952 236 V250" marker-end="url(#as)"/>
 
-  <rect class="disk" x="692" y="418" width="360" height="90" rx="6"/>
-  <text class="diskt hd" x="704" y="438">EBS-Volume kai-models · /opt/kai/models (nur lesend)</text>
-  <text class="diskt" x="704" y="458">nur GGUF-Modelldateien, keine Nutzerdaten</text>
-  <text class="diskt" x="704" y="478">Instance Storage (NVMe 116 GB): ungenutzt</text>
-  <text class="diskt" x="704" y="496">kein Swap · Docker-Logs ohne Prompt-Text</text>
+  <rect class="disk" x="872" y="418" width="360" height="90" rx="6"/>
+  <text class="diskt hd" x="884" y="438">EBS-Volume kai-models · /opt/kai/models (nur lesend)</text>
+  <text class="diskt" x="884" y="458">nur GGUF-Modelldateien, keine Nutzerdaten</text>
+  <text class="diskt" x="884" y="478">Instance Storage (NVMe 116 GB): ungenutzt</text>
+  <text class="diskt" x="884" y="496">kein Swap · Docker-Logs ohne Prompt-Text</text>
 
-  <circle class="num" cx="955" cy="76" r="10"/><text class="numt" x="951" y="80">7</text>
+  <circle class="num" cx="1135" cy="76" r="10"/><text class="numt" x="1131" y="80">9</text>
 </svg>
 <div class="legend">
   <span><i class="sw" style="background:var(--ram)"></i>RAM: weg beim Neustart</span>
-  <span><i class="sw" style="background:var(--vram)"></i>VRAM: weg beim Entladen oder Stopp</span>
+  <span><i class="sw" style="background:var(--vram)"></i>VRAM: weg beim Entladen oder Stopp von kai1 (Pförtner: 30 min nach der letzten Anfrage)</span>
   <span><i class="sw" style="background:var(--disk)"></i>Platte (EBS): bleibt, bis gelöscht</span>
   <span><i class="sw" style="background:var(--net)"></i>Netzweg</span>
 </div>
@@ -236,11 +247,12 @@ footer { color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
     <li><p><b>Browser → webui1.</b> Heute geht alles durch den SSH-Tunnel über AWS SSM an <code>127.0.0.1:3000</code> auf webui1, verschlüsselt; Open WebUI ist nur dort an localhost gebunden. Später übernimmt das VPN diesen Weg.</p></li>
     <li><p><b>Open WebUI verarbeitet das PDF, bevor du fragst.</b> Es legt die Datei unter <code>uploads/</code> ab, zieht mit pypdf den Text heraus, schneidet ihn in Abschnitte und rechnet für jeden einen Vektor aus. Das Embedding-Modell (Standard, nicht umgestellt) läuft auf der CPU von webui1, nicht auf der GPU. Abschnitte und Vektoren landen in <code>vector_db/</code>, der Text auch in <code>webui.db</code>.</p></li>
     <li><p><b>Frage stellen.</b> Open WebUI sucht die passendsten Abschnitte heraus und baut daraus einen Prompt: Systemprompt, PDF-Auszüge, bisheriger Verlauf, deine Frage. Im Standard geht nicht das ganze PDF ans Modell, nur diese Auszüge. Den Prompt schickt es an LiteLLM im Docker-Netz.</p></li>
-    <li><p><b>LiteLLM → kai1.</b> LiteLLM prüft den Key, schreibt einen Zähleintrag (ohne Text) in seine Postgres-Datenbank und reicht die Anfrage per HTTP an <code>kai1.unserkai.de:8080</code> weiter. Auf diesem Stück im VPC ist der Inhalt unverschlüsselt; geschützt ist er nur durch die Security Group.</p></li>
+    <li><p><b>LiteLLM → Pförtner.</b> LiteLLM prüft den Key, schreibt einen Zähleintrag (ohne Text) in seine Postgres-Datenbank und reicht die Anfrage an <code>http://kai-pfoertner:8081/kai1/v1</code> weiter: den Dienst <code>kai-pfoertner</code>, der als systemd-Dienst direkt auf webui1 läuft (Name aus <code>/etc/hosts</code> der Maschine). Ohne Wiederholungen (<code>num_retries: 0</code>), Zeitlimit 600 s.</p></li>
+    <li><p><b>Pförtner → kai1.</b> Der Pförtner liest die ganze Anfrage in den RAM (höchstens 64 MB) und schaut nach dem Modellnamen. Ist kai1 aus, lässt er die Instanz per AWS-API starten, hält dabei die Verbindung mit Leerzeilen offen und wartet bis zu 540 s, bis llama-swap das Modell geladen meldet; die Anfrage liegt solange komplett in seinem RAM. Dann schickt er sie per HTTP an <code>kai1.unserkai.de:8080</code>. Auf diesem Stück im VPC ist der Inhalt unverschlüsselt; geschützt ist er nur durch die Security Group. Jede durchgereichte Anfrage setzt seine Leerlaufuhr zurück; 30 min nach der letzten (frühestens 10 min nach dem Start) stoppt er kai1. Parallel zeigt der Filter „Kai-Status“ in Open WebUI den Startfortschritt; er fragt dafür nur <code>/status</code> ab und löst <code>/wake</code> aus, ohne Chat-Inhalt.</p></li>
     <li><p><b>llama-swap</b> sieht den Modellnamen, startet bei Bedarf llama-server mit gpt-oss-20b und leitet die Anfrage durch. Eine Kopie von Anfrage und Antwort hält es im Capture-Puffer im RAM.</p></li>
     <li><p><b>llama-server (llama.cpp)</b> zerlegt den Prompt in Token, rechnet ihn auf der T4 durch und legt das Ergebnis als KV-Cache in einem der 4 Slots im VRAM ab. Dann erzeugt es die Antwort Token für Token.</p></li>
-    <li><p><b>Nebenbei</b> schickt Open WebUI weitere Anfragen mit Chat-Inhalt an dasselbe Modell: Titel, Tags und Folgefragen. Sie nehmen denselben Weg und hinterlassen dieselben Spuren.</p></li>
-    <li><p><b>Zurück.</b> Die Antwort fließt als Stream über llama-swap, LiteLLM und Open WebUI in den Browser. Open WebUI speichert die fertige Antwort samt Quellen-Zitaten in <code>webui.db</code>.</p></li>
+    <li><p><b>Nebenbei</b> schickt Open WebUI weitere Anfragen mit Chat-Inhalt an dasselbe Modell: Titel, Tags und Folgefragen. Sie nehmen denselben Weg, hinterlassen dieselben Spuren und halten kai1 wach.</p></li>
+    <li><p><b>Zurück.</b> Die Antwort fließt als Stream über llama-swap, den Pförtner (in 64-KB-Stücken, ohne sie zu behalten), LiteLLM und Open WebUI in den Browser. Open WebUI speichert die fertige Antwort samt Quellen-Zitaten in <code>webui.db</code>.</p></li>
   </ol>
 </section>
 
@@ -264,16 +276,19 @@ footer { color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
       <tr><td><code>open-webui/vector_db/</code></td><td>PDF-Abschnitte im Klartext plus Vektoren (ChromaDB)</td><td><span class="pill p-disk">EBS kai-data</span></td><td class="life long">unbefristet, bis die Datei gelöscht wird</td></tr>
       <tr><td><code>litellm-db</code> (Postgres)</td><td>je Anfrage: Zeit, Modell, Token-Zahlen, Key-Hash, Konto; kein Prompt, keine Antwort (<code>store_prompts_in_spend_logs</code> ist nicht gesetzt, also aus)</td><td><span class="pill p-disk">EBS kai-data</span></td><td class="life long">unbefristet, keine Aufbewahrungsfrist gesetzt</td></tr>
       <tr><td>Prozesse</td><td>PDF und Text beim Verarbeiten, Prompt in LiteLLM beim Weiterleiten</td><td><span class="pill p-ram">RAM</span></td><td class="life">Sekunden bis Minuten (Ende der Antwort)</td></tr>
-      <tr><td>Docker-Logs</td><td>Zugriffszeilen, keine Inhalte bei Standard-Log-Level</td><td><span class="pill p-disk">Root-Volume</span></td><td class="life">rotiert, 3 × 10 MB je Container</td></tr>
+      <tr><td><code>kai-pfoertner</code> (Prozess)</td><td>die ganze Anfrage mit Prompt und PDF-Auszügen (bis 64 MB); die Antwort nur stückweise beim Durchreichen</td><td><span class="pill p-ram">RAM</span></td><td class="life">bis die Antwort fertig ist; wenn kai1 erst starten muss, zusätzlich die Wartezeit von bis zu 540 s</td></tr>
+      <tr><td><code>/var/lib/kai-pfoertner/state.json</code></td><td>gelernte Dauern für Boot, Dienst und Modellstart je Maschine; keine Nutzerdaten</td><td><span class="pill p-disk">Root-Volume</span></td><td class="life">unbefristet, unkritisch</td></tr>
+      <tr><td>Journal (<code>kai-pfoertner</code>)</td><td>Phasenwechsel, Start- und Stopp-Grund, Upstream-Fehler; Zugriffszeilen nur bei Debug-Level, kein Prompt</td><td><span class="pill p-disk">Root-Volume</span></td><td class="life">journald-Standard: nach Größe begrenzt, keine Frist gesetzt</td></tr>
+      <tr><td>Docker-Logs</td><td>Zugriffszeilen (Pfad, Status), keine Inhalte bei Standard-Log-Level; die von <code>open-webui</code> liest der Pförtner mit, um bei Anmeldung zu wecken</td><td><span class="pill p-disk">Root-Volume</span></td><td class="life">rotiert, 3 × 10 MB je Container</td></tr>
 
-      <tr class="group"><td colspan="4">Weg webui1 → kai1</td></tr>
+      <tr class="group"><td colspan="4">Weg webui1 (Pförtner) → kai1</td></tr>
       <tr><td>HTTP im VPC</td><td>Prompt und Antwort im Klartext</td><td><span class="pill p-net">Netz</span></td><td class="life">keine Ablage</td></tr>
 
       <tr class="group"><td colspan="4">kai1 (kai-gpu)</td></tr>
-      <tr><td>llama-swap Capture-Puffer</td><td>letzte Anfragen samt Prompt und Antwort, komprimiert; über die Oberfläche von llama-swap abrufbar</td><td><span class="pill p-ram">RAM</span></td><td class="life">bis neue Anfragen ihn überschreiben (wenige MB) oder Neustart</td></tr>
+      <tr><td>llama-swap Capture-Puffer</td><td>letzte Anfragen samt Prompt und Antwort, komprimiert; über die Oberfläche von llama-swap abrufbar</td><td><span class="pill p-ram">RAM</span></td><td class="life">bis neue Anfragen ihn überschreiben (wenige MB), spätestens bis der Pförtner kai1 stoppt: 30 min nach der letzten Anfrage</td></tr>
       <tr><td>llama-server</td><td>Prompt als Text und Token beim Verarbeiten</td><td><span class="pill p-ram">RAM</span></td><td class="life">Sekunden</td></tr>
-      <tr><td>KV-Cache</td><td>der ganze Prompt als Rechenzustand, in einem von 4 Slots</td><td><span class="pill p-vram">VRAM</span></td><td class="life">bis der Slot neu belegt wird oder das Modell entladen wird; <code>ttl: 0</code> heißt: nie von selbst, nur bei Modellwechsel, Neustart oder Stopp von kai1</td></tr>
-      <tr><td>Modellgewichte</td><td>gpt-oss-20b, ~12 GB</td><td><span class="pill p-vram">VRAM</span> <span class="pill p-ram">Page-Cache</span></td><td class="life">solange geladen; keine Nutzerdaten</td></tr>
+      <tr><td>KV-Cache</td><td>der ganze Prompt als Rechenzustand, in einem von 4 Slots</td><td><span class="pill p-vram">VRAM</span></td><td class="life">bis der Slot neu belegt wird oder das Modell entladen wird; <code>ttl: 0</code> heißt: llama-swap entlädt nie von selbst, aber der Pförtner stoppt kai1 30 min nach der letzten Anfrage, und damit ist der VRAM leer</td></tr>
+      <tr><td>Modellgewichte</td><td>gpt-oss-20b, ~12 GB</td><td><span class="pill p-vram">VRAM</span> <span class="pill p-ram">Page-Cache</span></td><td class="life">solange kai1 läuft; keine Nutzerdaten</td></tr>
       <tr><td><code>/opt/kai/models</code></td><td>nur Modelldateien, nur lesend eingebunden</td><td><span class="pill p-disk">EBS kai-models</span></td><td class="life">keine Nutzerdaten</td></tr>
       <tr><td>Instance Storage, Swap</td><td>ungenutzt, kein Swap angelegt</td><td>—</td><td class="life">—</td></tr>
       <tr><td>Docker-Logs</td><td>Modellwechsel, Ladezeiten, Token-Zahlen; kein Prompt bei <code>logLevel: info</code></td><td><span class="pill p-disk">Root-Volume</span></td><td class="life">rotiert, 3 × 10 MB je Container</td></tr>
@@ -302,13 +317,13 @@ footer { color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
     </div>
     <div class="issue">
       <h3>Klartext im VPC</h3>
-      <p>Zwischen webui1 und kai1 läuft HTTP ohne TLS, geschützt nur durch die Security Group. Für ein privates Subnetz ist das üblich; wir sollten es aber wissen, wenn wir „verschlüsselt“ sagen.</p>
+      <p>Zwischen dem Pförtner auf webui1 und kai1 läuft HTTP ohne TLS, geschützt nur durch die Security Group; innerhalb von webui1 (Open WebUI → LiteLLM → Pförtner) bleibt alles auf der Maschine. Für ein privates Subnetz ist das üblich; wir sollten es aber wissen, wenn wir „verschlüsselt“ sagen.</p>
       <div class="who">zur Kenntnis</div>
     </div>
     <div class="issue">
       <h3>„Das Modell speichert nichts“</h3>
-      <p>Das gilt für die Platte von kai1. Im VRAM bleibt der letzte Prompt je Slot als KV-Cache liegen, bis er überschrieben wird oder kai1 stoppt. Wer kai1 nach der Nutzung stoppt, räumt RAM und VRAM vollständig.</p>
-      <div class="who">zur Kenntnis</div>
+      <p>Das gilt für die Platte von kai1. Im VRAM bleibt der letzte Prompt je Slot als KV-Cache liegen, im RAM der Capture-Puffer von llama-swap, bis sie überschrieben werden oder kai1 stoppt. Seit dem Pförtner passiert das von selbst: 30 min nach der letzten Anfrage ist die Maschine aus und RAM wie VRAM sind leer. Der Pförtner selbst hält nur die laufende Anfrage im RAM und schreibt nichts davon auf Platte.</p>
+      <div class="who">zur Kenntnis · geprüft an kai/bin/kai-pfoertner</div>
     </div>
     <div class="issue">
       <h3>Zählerdaten ohne Frist</h3>
@@ -319,7 +334,7 @@ footer { color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
 </section>
 
 <footer>
-  <div>Geprüft an: <code>kai/compose/entry/compose.yaml</code>, <code>litellm.yaml.j2</code>, <code>kai/compose/gpu/compose.yaml</code>, <code>llama-swap.yaml.j2</code>, <code>group_vars</code> und <code>host_vars</code> von webui1 und kai1, <code>kai/docs/instance_specs.md</code>; Standardwerte aus der aktuellen Doku von Open WebUI, LiteLLM und llama-swap.</div>
+  <div>Geprüft an: <code>kai/compose/entry/compose.yaml</code>, <code>litellm.yaml.j2</code>, <code>kai/compose/gpu/compose.yaml</code>, <code>llama-swap.yaml.j2</code>, <code>kai/bin/kai-pfoertner</code>, Rolle <code>kai_pfoertner</code> (Konfiguration, systemd-Unit), <code>kai/openwebui/kai_status_filter.py</code>, <code>group_vars</code> und <code>host_vars</code> von webui1 und kai1, <code>kai/docs/instance_specs.md</code>; Standardwerte aus der aktuellen Doku von Open WebUI, LiteLLM und llama-swap.</div>
   <div>Nicht an der laufenden Instanz gemessen. Die Standardwerte gelten, solange niemand sie im Admin-Bereich von Open WebUI umstellt.</div>
 </footer>
 </div>

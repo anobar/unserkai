@@ -86,3 +86,66 @@ Open WebUI schickt die E-Mail des angemeldeten Nutzers im Header `X-OpenWebUI-Us
 ```sql
 SELECT "user", model, date_trunc('month', "startTime") AS monat, sum(prompt_tokens) AS prompt, sum(completion_tokens) AS completion FROM "LiteLLM_SpendLogs" GROUP BY 1, 2, 3 ORDER BY 3, 1, 2;
 ```
+
+## Betrieb von kai-dev aus (Deployment und Diagnose)
+
+Die Agenten-VM `kai-dev` hat das AWS-Profil `kai` (`credential_process` liest `~/.aws/kai-session.json`) und in `~/.ssh/config` einen Eintrag für beide Instanz-IDs mit SSM-ProxyCommand, Benutzer `admin`; einen Zugangsschlüssel bekommt sie nie, nur eine Sitzung von einer Stunde.
+
+### 1. Sitzung übergeben (auf dem eigenen Rechner mit MFA-Profil, hier `ssm`)
+
+Die zwei Befehle nacheinander, nie in `ssh` verkettet, sonst mischen sich MFA- und Passphrase-Abfrage und der MFA-Code scheitert:
+
+```bash
+rm -rf ~/.aws/cli/cache; umask 077; aws configure export-credentials --profile ssm --format process > ~/kai-session.json && echo OK
+scp ~/kai-session.json aivm@kai-dev:.aws/kai-session.json && rm ~/kai-session.json && echo OK
+```
+
+Ohne `rm -rf ~/.aws/cli/cache` übergibt eine Wiederholung die alte Sitzung aus dem Cache mit derselben `Expiration`, die Verlängerung bleibt wirkungslos.
+
+### 2. Prüfen (auf kai-dev)
+
+```bash
+aws sts get-caller-identity --profile kai
+jq -r .Expiration ~/.aws/kai-session.json
+```
+
+### 3. kai1 abfragen, starten, stoppen (kostet, solange sie läuft)
+
+```bash
+kai/bin/kai-gpu --profile kai --instance-id i-0f896ee21e1ae8c72 status
+kai/bin/kai-gpu --profile kai --instance-id i-0f896ee21e1ae8c72 start
+kai/bin/kai-gpu --profile kai --instance-id i-0f896ee21e1ae8c72 stop
+```
+
+`start` startet die Instanz, meldet danach aber einen Fehler, weil der Rolle `ec2:DescribeInstanceStatus` fehlt; SSH antwortet etwa eine Minute nach dem Start, bis dahin mit `TargetNotConnected`.
+
+### 4. Diagnose per SSH
+
+```bash
+ssh i-0f6dc684ea90b09cf          # webui1 (kai-entry)
+ssh i-0f896ee21e1ae8c72          # kai1 (kai-gpu)
+ssh i-0f6dc684ea90b09cf 'sudo docker ps; sudo journalctl -u kai-pfoertner -n 50 --no-pager'
+ssh i-0f896ee21e1ae8c72 'nvidia-smi; sudo docker ps'
+```
+
+### 5. Rauchtest ohne Installation
+
+```bash
+ssh i-0f6dc684ea90b09cf 'sudo bash -s -- --target entry' < kai/bin/kai-smoke
+ssh i-0f896ee21e1ae8c72 'sudo bash -s -- --target gpu'   < kai/bin/kai-smoke
+```
+
+### 6. Deployment aus einem Worktree auf `origin/main`
+
+Der Haupt-Checkout kann ungemergte Arbeit tragen, also läuft das Deployment aus dem Worktree `../unserkai-plan`; das Inventory-Overlay muss dort eine echte Kopie sein, ein Symlink erscheint als unversioniert.
+
+```bash
+cd ../unserkai-plan
+git fetch origin && git switch --detach origin/main
+rm -rf ansible/inventory/local && cp -a ../unserkai/ansible/inventory/local ansible/inventory/
+cd ansible
+LC_ALL=C.UTF-8 make check  LIMIT=webui1     # Dry-Run mit Diff
+LC_ALL=C.UTF-8 make deploy LIMIT=webui1     # anwenden; kai1 genauso
+```
+
+Im Dry-Run melden beide Maschinen immer Änderungen an Apt-Cache und Docker-Schlüssel; das ist keine echte Abweichung.
